@@ -1,0 +1,61 @@
+name: skillfulhacks
+version: '1.0'
+main: sbs.immovablerod.metaDungeon.MetaDungeon
+api-version: '1.13'
+depend: [NBTAPI]
+commands:
+  test:
+    description: testing
+    usage: /test
+    permission: skillfulhacks.test
+    permission-message: You don't have <permission>
+  init_map:
+    description: testing
+    usage: /init_map <name> <x> <y> <z> <xdelta> <ydelta> <zdelta>
+    permission: skillfulhacks.init_map
+    permission-message: You don't have <permission>
+  add_item_to_db:
+    description: testing
+    usage: /add_item_to_db <name> <category> <cost> <rarity> <tier> <consumable> <randomGen>
+    permission: skillfulhacks.add_item_to_db
+    permission-message: You don't have <permission>
+  add_entity_to_db:
+    description: testing
+    usage: /add_entity_to_db <name> <tier> <groupMin> <groupMin>
+    permission: skillfulhacks.add_entity_to_db
+    permission-message: You don't have <permission>
+  add_world_event:
+    description: testing
+    usage: /add_world_event <name> <tier> <groupMin> <groupMin>
+    permission: skillfulhacks.add_world_event
+    permission-message: You don't have <permission>
+  load_entity_to_db:
+    description: testing
+    usage: /load_entity_to_db <name>
+    permission: skillfulhacks.load_entity_to_db
+    permission-message: You don't have <permission>
+  debug_sql_write:
+    description: testing
+    usage: /debug_sql_write [query]
+    permission: skillfulhacks.debug_sql_write
+    permission-message: You don't have <permission>
+  debug_sql_query:
+    description: testing
+    usage: /debug_sql_query [query]
+    permission: skillfulhacks.debug_sql_query
+    permission-message: You don't have <permission>
+  load_item_from_db:
+    description: testing
+    usage: /load_item_from_db <name>
+    permission: skillfulhacks.load_item_from_db
+    permission-message: You don't have <permission>
+  start_game:
+    description: testing
+    usage: /start_game <name>
+    permission: skillfulhacks.start_game
+    permission-message: You don't have <permission>
+  stop_game:
+    description: testing
+    usage: /stop_game <name>
+    permission: skillfulhacks.stop_game
+    permission-message: You don't have <permission>

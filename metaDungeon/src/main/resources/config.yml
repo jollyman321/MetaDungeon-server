@@ -1,0 +1,14 @@
+wave-time: 120
+chest-spawn-time-min: 30
+chest-spawn-time-max: 90
+chest-density: 500
+wave-sequence: [one, two, three]
+player-spawn: [-60,71,46]
+waves:
+    one:
+        spawns:
+            zombie_tier_one: 0.75
+            zombie_tier_two: 0.25
+        density: 500
+
+
