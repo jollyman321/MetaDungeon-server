@@ -115,7 +115,7 @@ public class ServerListener implements Listener {
         MetaDungeonPlayer playerConfig = plugin.players.get(event.getPlayer().getUniqueId());
 
         String action = event.getAction().toString();
-        if (playerConfig.isDead() && action.startsWith("RIGHT_CLICK")
+        if (playerConfig.isDead() && action.startsWith("LEFT_CLICK")
                 && plugin.players.size() > 1
                 && playerConfig.getLives() > 1
                 ) {

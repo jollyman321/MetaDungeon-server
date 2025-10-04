@@ -27,6 +27,8 @@ public class Game {
     private final MetaDungeon plugin = MetaDungeon.getInstance();
     private final RandomCollection<String> worldEventCategorySelection = Random.getRandomCollection((List<List<?>>) plugin.getConfig().getList("worldevent-category-weight"));
     private final RandomCollection<String> worldEventRaritySelection = Random.getRandomCollection((List<List<?>>) plugin.getConfig().getList("worldevent-rarity-weight"));
+    private final RandomCollection<String> monsterRaritySelection = Random.getRandomCollection((List<List<?>>) plugin.getConfig().getList("monster-rarity-weight"));
+
     // *** run time settings ***
 
     private int currentWaveSequence = 0;
@@ -113,7 +115,7 @@ public class Game {
         System.out.println("spawning " + entityCount + " entities");
         for (int i = 0;i < entityCount;i++) {
             Location location = plugin.map.getEntityLocations().get(Random.getRandInt(0, plugin.map.getEntityLocations().size() - 1));
-            SpawnEntity.spawn(resolveSelection("monster",  monsterTierSelection.next(), "1", GConfig.monsterSelection, 10), location);
+            SpawnEntity.spawn(resolveSelection("monster",  monsterTierSelection.next(), monsterRaritySelection.next(), GConfig.monsterSelection, 10), location);
         }
     }
 
