@@ -19,6 +19,7 @@ import static java.lang.Math.round;
 
 
 public class MetaDungeonPlayer extends MetaDungeonEntity {
+    private final double baseStamina;
     private Player player;
     private final int staminaRecoveryTime;
     private int lives;
@@ -43,6 +44,7 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
 
         this.player = player;
         this.stamina = 100.0;
+        this.baseStamina = 100.0;
         this.maxStamina = 100.0;
         this.staminaRecoveryTime = 20;
         this.staminaRecovery = this.staminaRecoveryTime;
@@ -153,6 +155,8 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
         this.damage = this.baseDamage;
         this.movementSpeed = this.baseMovementSpeed;
         this.knockback = this.baseKnockback;
+        this.maxHealth = this.baseHealth;
+        this.maxStamina = this.baseStamina;
 
         float damagePercentBoost = 1;
         for (MetaDungeonItem item : this.gear.values()) {
@@ -162,6 +166,9 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
                 this.damage  += item.damage;
                 this.movementSpeed += item.movement;
                 this.knockback += item.getKnockback();
+
+                this.maxHealth  += item.getHealth();
+                this.maxStamina += item.getStamina();
             }
         }
 
