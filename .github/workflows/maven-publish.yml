@@ -27,7 +27,6 @@ jobs:
       run: mvn -B package --file pom.xml
 
     - name: Publish to GitHub Packages Apache Maven
-      working-directory: ./metaDungeon
-      run: mvn deploy -s ../settings.xml
+      run: mvn deploy --file metaDungeon/ -s $GITHUB_WORKSPACE/settings.xml
       env:
         GITHUB_TOKEN: ${{ github.token }}
