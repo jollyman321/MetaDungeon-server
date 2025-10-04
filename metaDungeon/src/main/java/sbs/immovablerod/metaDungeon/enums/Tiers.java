@@ -1,24 +1,26 @@
-package sbs.immovablerod.metaDungeon.Enums;
+package sbs.immovablerod.metaDungeon.enums;
 
 
-public enum Rarities {
-    COMMON (1) {
+public enum Tiers {
+    ONE (1) {
         @Override
-        public Colors color() { return Colors.DARK_GREEN; }
+        public Colors color() {
+            return Colors.DARK_GREEN;
+        }
     },
-    RARE (3) {
+    TWO (2) {
         @Override
         public Colors color() {
             return Colors.BLUE;
         }
     },
-    LEGENDARY (5) {
+    THREE (3) {
         @Override
         public Colors color() {
             return Colors.GOLD;
         }
     },
-    MYTHIC (6) {
+    FOUR (4) {
         @Override
         public Colors color() {
             return Colors.LIGHT_PURPLE;
@@ -29,16 +31,15 @@ public enum Rarities {
 
     public abstract Colors color();
 
-    Rarities(int id) {
+    Tiers(int id) {
         this.id = id;
     }
-    public static Rarities get(int abbr){
-        for(Rarities v : values()){
+    public static Tiers get(int abbr){
+        for(Tiers v : values()){
             if(v.id == abbr){
                 return v;
             }
         }
         return null;
     }
-
 }

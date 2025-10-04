@@ -10,8 +10,8 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
-import sbs.immovablerod.metaDungeon.Enums.Constants;
-import sbs.immovablerod.metaDungeon.Enums.Symbols;
+import sbs.immovablerod.metaDungeon.enums.Constants;
+import sbs.immovablerod.metaDungeon.enums.Symbols;
 import sbs.immovablerod.metaDungeon.MetaDungeon;
 
 import java.util.ArrayList;

@@ -13,7 +13,7 @@ public class IO {
         ObjectMapper objectMapper = new ObjectMapper();
         System.out.println(map);
         try {
-            objectMapper.writeValue(new File ("plugins" + File.separator + "skillfulhacks" + File.separator + file_name), map);
+            objectMapper.writeValue(new File ("plugins" + File.separator + "metaDungeon" + File.separator + file_name), map);
         } catch (IOException e) {
             System.out.println(e);
         }
@@ -32,7 +32,7 @@ public class IO {
 
     public static HashMap<String,Object> LoadMapFromJson(String file_name) {
         ObjectMapper mapper = new ObjectMapper();
-        File from = new File("plugins" + File.separator + "skillfulhacks" + File.separator + file_name);
+        File from = new File("plugins" + File.separator + "metaDungeon" + File.separator + file_name);
         TypeReference<HashMap<String,Object>> typeRef
                 = new TypeReference<HashMap<String,Object>>() {};
 

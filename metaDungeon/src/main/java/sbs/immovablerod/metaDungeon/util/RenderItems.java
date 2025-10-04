@@ -2,12 +2,12 @@ package sbs.immovablerod.metaDungeon.util;
 
 import de.tr7zw.nbtapi.NBT;
 import de.tr7zw.nbtapi.iface.ReadWriteNBT;
-import org.apache.commons.lang.WordUtils;
+import org.apache.commons.text.WordUtils;
 import org.bukkit.inventory.ItemStack;
-import sbs.immovablerod.metaDungeon.Enums.Colors;
-import sbs.immovablerod.metaDungeon.Enums.Rarities;
-import sbs.immovablerod.metaDungeon.Enums.Symbols;
-import sbs.immovablerod.metaDungeon.Enums.Tiers;
+import sbs.immovablerod.metaDungeon.enums.Colors;
+import sbs.immovablerod.metaDungeon.enums.Rarities;
+import sbs.immovablerod.metaDungeon.enums.Symbols;
+import sbs.immovablerod.metaDungeon.enums.Tiers;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,6 +33,9 @@ public class RenderItems {
             int knockback = Integer.parseInt(itemData.get("knockback"));
             int damagePercent = Integer.parseInt(itemData.get("damagePercent"));
 
+            int maxHealth = Integer.parseInt(itemData.get("maxHealth"));
+            int maxStamina = Integer.parseInt(itemData.get("maxStamina"));
+
             int rarity = Integer.parseInt(itemData.get("rarity"));
             int tier = Integer.parseInt(itemData.get("tier"));
 
@@ -47,6 +50,9 @@ public class RenderItems {
 
 
             // ** Attributes **
+            if (maxHealth > 0) lore.add(renderLoreLine("Max Health: " + maxHealth, Colors.GOLD));
+            if (maxStamina > 0) lore.add(renderLoreLine("Max Stamina: " + maxStamina, Colors.GOLD));
+
             if (damage > 0) lore.add(renderLoreLine("Damage: " + damage, Colors.DARK_AQUA));
             if (damagePercent != 0) lore.add(renderLoreLine("Damage: +" + damagePercent + "%", Colors.DARK_AQUA));
             if (attackSpeed > 0) lore.add(renderLoreLine("Attack Speed: " + attackSpeed, Colors.DARK_AQUA));

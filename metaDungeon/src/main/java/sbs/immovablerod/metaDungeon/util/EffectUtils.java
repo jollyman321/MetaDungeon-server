@@ -1,6 +1,6 @@
 package sbs.immovablerod.metaDungeon.util;
 
-import sbs.immovablerod.metaDungeon.Enums.Effects;
+import sbs.immovablerod.metaDungeon.enums.Effects;
 import sbs.immovablerod.metaDungeon.classes.MetaDungeonEntity;
 import sbs.immovablerod.metaDungeon.elements.BaseEffect;
 import sbs.immovablerod.metaDungeon.elements.effects.HealthBoostAdd;

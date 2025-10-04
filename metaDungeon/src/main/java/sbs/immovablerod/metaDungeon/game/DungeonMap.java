@@ -31,7 +31,7 @@ public class DungeonMap {
         SQL database = null;
 
         try {
-            database = new SQL("plugins" + File.separator + "skillfulhacks" + File.separator + "database.sqlite");
+            database = new SQL("plugins" + File.separator + "metaDungeon" + File.separator + "database.sqlite");
             try (ResultSet query = database.execute_query("SELECT * FROM maps WHERE '" + this.mapName + "' IS name")) {
                 try {
                     List<List<Integer>> chestLocationsXYZ = chestLocationsObjectMapper.readValue(query.getString("chest_locations"), List.class);

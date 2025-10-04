@@ -27,9 +27,10 @@ public class GConfig {
     public static final int worldEventSpawnTimeMax = plugin.getConfig().getInt("worldevent-spawn-time-max");
 
     public static final HashMap<String, HashMap<String, HashMap<String, List<String>>>>
-            leveledLootSelection = LoadSqlTable.tableToNestedHashMap(plugin.itemsDB, "category", "tier", "rarity");
+            leveledLootSelection = LoadSqlTable.tableToNestedHashMap(plugin.itemsDB, "tier", "rarity", "category");
     public static final HashMap<String, HashMap<String, HashMap<String, List<String>>>>
-            worldEventSelection = LoadSqlTable.tableToNestedHashMap(plugin.worldEventsDB, "category", "tier", "rarity");
+            worldEventSelection = LoadSqlTable.tableToNestedHashMap(plugin.worldEventsDB, "tier", "rarity", "category");
     public static final HashMap<String, HashMap<String, HashMap<String, List<String>>>>
-            monsterSelection = LoadSqlTable.tableToNestedHashMap(plugin.entitiesDB, "category", "tier", "rarity");
+            monsterSelection = LoadSqlTable.tableToNestedHashMap(plugin.entitiesDB, "tier", "rarity", "category");
+
 }

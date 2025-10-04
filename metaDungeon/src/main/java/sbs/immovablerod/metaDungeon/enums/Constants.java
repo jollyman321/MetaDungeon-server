@@ -1,9 +1,9 @@
-package sbs.immovablerod.metaDungeon.Enums;
+package sbs.immovablerod.metaDungeon.enums;
 
 
 public enum Constants {
     PLAYER_SPEED_MODIFIER (50),
-    MONSTER_SPEED_MODIFIER (40);
+    MONSTER_SPEED_MODIFIER (45);
 
 
     final private int value;

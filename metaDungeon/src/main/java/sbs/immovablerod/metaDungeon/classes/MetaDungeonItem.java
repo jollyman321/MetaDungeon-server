@@ -4,6 +4,8 @@ import de.tr7zw.nbtapi.NBT;
 import de.tr7zw.nbtapi.iface.ReadWriteNBT;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
+import sbs.immovablerod.metaDungeon.elements.ItemInterface;
+import sbs.immovablerod.metaDungeon.enums.Items;
 
 import java.util.UUID;
 
@@ -21,15 +23,16 @@ public class MetaDungeonItem extends ItemStack {
     public final Integer defence;
     public final Integer movement;
     public final Integer health;
-    public final Integer heal_life;
+    public final Integer healLife;
     public final Integer weight;
     public final Integer stamina;
-    public final Integer heal_stamina;
+    public final Integer healStamina;
     private final UUID id;
     private final Integer attack_speed;
     private final Integer staminaCost;
     private final Integer knockback;
     private final Integer damagePercent;
+    private final ItemInterface itemInterface;
     private Integer maxInternalDurability;
     public Integer durability;
     public Integer currentDurability;
@@ -51,8 +54,8 @@ public class MetaDungeonItem extends ItemStack {
                          Integer health,
                          Integer stamina,
                          Integer weight,
-                         Integer heal_life,
-                         Integer heal_stamina,
+                         Integer healLife,
+                         Integer healStamina,
                          Integer durability,
                          Integer attack_speed,
                          Integer staminaCost,
@@ -79,8 +82,8 @@ public class MetaDungeonItem extends ItemStack {
         this.health = health;
         this.stamina = stamina;
         this.weight = weight;
-        this.heal_life = heal_life;
-        this.heal_stamina = heal_stamina;
+        this.healLife = healLife;
+        this.healStamina = healStamina;
         this.durability = durability;
 
         this.attack_speed = attack_speed;
@@ -99,7 +102,23 @@ public class MetaDungeonItem extends ItemStack {
                 nbt.setInteger("Damage", this.maxInternalDurability - this.durability);
             }
         });
+        
+        // implement custom item functions
+        this.itemInterface = Items.get(this.name, this);
 
+    }
+    public void consume(MetaDungeonPlayer player) {
+        player.changeHealth(this.getHealLife());
+        player.changeStamina((double) this.getHealStamina());
+
+        if (player.getPlayer().getInventory().getItemInMainHand().getAmount() > 1) {
+            player.getPlayer().getInventory().getItemInMainHand().setAmount(player.getPlayer().getInventory().getItemInMainHand().getAmount() - 1);
+        } else {
+            player.getPlayer().getInventory().setItemInMainHand(null);
+        }
+        player.getGear().put("mainHand", null);
+
+        // remove item from plugin.items?
     }
 
     public void onTargetHit(MetaDungeonPlayer player) {
@@ -120,4 +139,11 @@ public class MetaDungeonItem extends ItemStack {
     public Integer getKnockback() {return this.knockback;}
     public Integer getDamage() {return this.damage;}
     public Integer getDamagePercent() {return this.damagePercent;}
+    public Integer getHealth() {return this.health;}
+    public Integer getStamina() {return this.stamina;}
+
+    public Integer getHealLife() {return this.healLife;}
+    public Integer getHealStamina() {return this.healStamina;}
+
+    public ItemInterface getInterface() {return this.itemInterface;}
 }

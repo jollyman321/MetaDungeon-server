@@ -8,8 +8,8 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import sbs.immovablerod.metaDungeon.Enums.Constants;
-import sbs.immovablerod.metaDungeon.Enums.Symbols;
+import sbs.immovablerod.metaDungeon.enums.Constants;
+import sbs.immovablerod.metaDungeon.enums.Symbols;
 import sbs.immovablerod.metaDungeon.util.ItemUtil;
 
 import java.util.HashMap;
@@ -19,7 +19,7 @@ import static java.lang.Math.round;
 
 
 public class MetaDungeonPlayer extends MetaDungeonEntity {
-    private final Player player;
+    private Player player;
     private final int staminaRecoveryTime;
     private int lives;
     private boolean dead;
@@ -50,6 +50,7 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
         this.lives = 3;
 
 
+
         // modified by equipment and buffs
         this.gear = new HashMap<>();
 
@@ -60,6 +61,8 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
         // remove 1.9+ weapon effect e.g sweep attack
         this.player.getAttribute(Attribute.GENERIC_ATTACK_SPEED).setBaseValue(16);
         this.player.getAttribute(Attribute.GENERIC_ARMOR).setBaseValue(-20);
+
+
 
     }
 
@@ -89,6 +92,11 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
 
     public Player getPlayer() {return this.player;}
 
+    public void setPlayer(Player player) {
+        // resetting the player is required in the event of a disconnect
+        this.player = player;
+    }
+
     public Double getStamina() {return stamina;}
 
     public Integer getMaxHealth() {return this.maxHealth;}
@@ -108,17 +116,27 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
         }
         this.setStamina(this.stamina + amount);
     }
+    public double getMaxStamina() {
+        return this.maxStamina;
+    }
+    public void setMaxStamina(double amount) {
+        this.maxStamina = amount;
+    }
 
     @Override
     public void setHealth(int health) {
         super.setHealth(Math.min(health, this.maxHealth));
 
         if (this.health <= 0) {
-            this.player.setHealth(0);
+            this.kill();
         } else {
             this.player.setHealth(Math.min(Math.max(((double) this.health / this.maxHealth) * 20, 1), 20));
         }
         this.displayActionBar();
+    }
+
+    public void setMaxHealth(int amount) {
+        this.maxHealth = amount;
     }
 
     @Override
@@ -164,14 +182,15 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
     }
 
     public void displayActionBar() {
+
         if (!this.dead) {
             this.player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText("@HEALTH/@MAX_HEALTH   |   @DAMAGE   |   @DEFENCE   |   @STAMINA/@MAX_STAMINA".replace(
                             "@HEALTH", Symbols.HEART.color().code() + String.valueOf(this.health)
                     ).replace("@MAX_HEALTH", this.maxHealth.toString() + Symbols.HEART).replace(
                             "@DAMAGE", Symbols.DAMAGE.color().code() + String.valueOf(this.damage) + Symbols.DAMAGE).replace(
                             "@DEFENCE", Symbols.DEFENCE.color().code() + String.valueOf(this.defence) + Symbols.DEFENCE).replace(
-                            "@STAMINA", Symbols.STAMINA.color().code() + this.stamina.toString()).replace(
-                            "@MAX_STAMINA", this.maxStamina.toString() + Symbols.STAMINA)
+                            "@STAMINA", Symbols.STAMINA.color().code() + round(this.stamina)).replace(
+                            "@MAX_STAMINA", String.valueOf(round(this.maxStamina)) + Symbols.STAMINA)
             ));
         } else {
             this.player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(
@@ -184,7 +203,6 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
 
     public void update() {
         // player updates should happen 10 times a second
-
         if (this.player.isSprinting() && this.stamina > 0) {
             this.changeStamina(-0.5);
         } else if (!this.player.isSprinting() && this.stamina < this.maxStamina && this.staminaRecovery >= this.staminaRecoveryTime) {
@@ -202,6 +220,10 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
 
             this.player.setLevel((int) this.attackCoolDown);
 
+        }
+
+        if (this.gear.get("mainHand") != null && this.stamina < this.gear.get("mainHand").getStaminaCost()) {
+            this.player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_DIGGING, 4, 249));
         }
 
         this.displayActionBar();

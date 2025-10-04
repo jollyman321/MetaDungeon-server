@@ -1,4 +1,4 @@
-package sbs.immovablerod.metaDungeon.Enums;
+package sbs.immovablerod.metaDungeon.enums;
 
 public enum Effects
 {

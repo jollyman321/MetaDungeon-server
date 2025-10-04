@@ -1,6 +1,6 @@
 package sbs.immovablerod.metaDungeon.game;
 
-import sbs.immovablerod.metaDungeon.Enums.Colors;
+import sbs.immovablerod.metaDungeon.enums.Colors;
 import sbs.immovablerod.metaDungeon.MetaDungeon;
 import sbs.immovablerod.metaDungeon.classes.MetaDungeonMonster;
 import sbs.immovablerod.metaDungeon.util.Random;
@@ -21,7 +21,6 @@ public class WorldEvents {
         Message.messageAll("[EVENT] " + Colors.RED.code() + "Some monsters have mutated beware!" , Colors.DARK_GREEN);
         for (MetaDungeonMonster entity : plugin.entities.values()) {
             if (Random.getRandInt(1,2) ==  2) {
-                System.out.println((int) Math.round(entity.getHealth() * 0.1));
                 entity.addEffect("health_boost_add", (int) Math.round(entity.getHealth() * 0.1), -1);
             }
         }
@@ -37,7 +36,6 @@ public class WorldEvents {
     private static void buffSpeed(Game root) {
         Message.messageAll("[EVENT] " + Colors.RED.code() + "Some monsters have mutated beware! (speed)" , Colors.DARK_GREEN);
         for (MetaDungeonMonster entity : plugin.entities.values()) {
-
             if (Random.getRandInt(1,2) ==  2) {
                 entity.addEffect("speed_boost", (int) Math.round(entity.getMovementSpeed() * 0.05), -1);
             }

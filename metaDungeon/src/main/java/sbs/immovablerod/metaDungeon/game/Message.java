@@ -1,7 +1,7 @@
 package sbs.immovablerod.metaDungeon.game;
 
 import org.bukkit.Bukkit;
-import sbs.immovablerod.metaDungeon.Enums.Colors;
+import sbs.immovablerod.metaDungeon.enums.Colors;
 import sbs.immovablerod.metaDungeon.MetaDungeon;
 import sbs.immovablerod.metaDungeon.classes.MetaDungeonPlayer;
 

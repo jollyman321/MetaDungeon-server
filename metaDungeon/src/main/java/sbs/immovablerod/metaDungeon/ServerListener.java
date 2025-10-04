@@ -1,15 +1,15 @@
 package sbs.immovablerod.metaDungeon;
 
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.entity.*;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.*;
+import sbs.immovablerod.metaDungeon.classes.MetaDungeonItem;
 import sbs.immovablerod.metaDungeon.classes.MetaDungeonMonster;
 import sbs.immovablerod.metaDungeon.classes.MetaDungeonPlayer;
 
@@ -20,7 +20,7 @@ public class ServerListener implements Listener {
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
-        Bukkit.broadcastMessage("Welcome to the server!");
+        Bukkit.broadcastMessage("Welcome to the server - niggers are halve price today so get them while they last!");
 
         if (!plugin.players.containsKey(event.getPlayer().getUniqueId())) {
             System.out.println("player " + event.getPlayer().getUniqueId() + " added to player config");
@@ -28,8 +28,7 @@ public class ServerListener implements Listener {
         }
 
         if (plugin.players.get(event.getPlayer().getUniqueId()).getInGame()) {
-            System.out.println("test");
-            plugin.tasks.add(Bukkit.getScheduler().runTaskTimer(plugin, () -> plugin.players.get(event.getPlayer().getUniqueId()).update(), 2L, 2L));
+            plugin.players.get(event.getPlayer().getUniqueId()).setPlayer(event.getPlayer());
         }
     }
 
@@ -87,19 +86,54 @@ public class ServerListener implements Listener {
             event.setDamage(0);
         }
     }
+
     @EventHandler
-    public void onPlayerInteract(PlayerInteractEvent event) {
-        MetaDungeonPlayer playerConfig = plugin.players.get(event.getPlayer().getUniqueId());
-        if (playerConfig.isDead() && event.getAction().name().equals("LEFT_CLICK_AIR")
-                && plugin.players.size() > 1
-                && playerConfig.getLives() > 1
-                ) {
-            playerConfig.respawn();
+    public void onProjectileHit(ProjectileHitEvent event) {
+        if (event.getHitEntity() instanceof Player) {
+            Entity entity = (Entity) event.getEntity().getShooter();
+            MetaDungeonMonster shooter = plugin.entities.get(entity.getUniqueId());
+            if (shooter != null) {
+                Player player = (Player) event.getHitEntity();
+                MetaDungeonPlayer target = plugin.players.get(player.getUniqueId());
+
+                target.receiveAttack(shooter);
+
+            } else {
+                System.out.println("[WARN] unregister projectile hit caused by " + entity.getName());
+            }
+        } else {
+            event.setCancelled(true);
         }
     }
 
     @EventHandler
+    public void onEntityShootBow(EntityShootBowEvent event) {}
+
+    @EventHandler
+    public void onPlayerInteract(PlayerInteractEvent event) {
+
+        MetaDungeonPlayer playerConfig = plugin.players.get(event.getPlayer().getUniqueId());
+
+        String action = event.getAction().toString();
+        if (playerConfig.isDead() && action.startsWith("RIGHT_CLICK")
+                && plugin.players.size() > 1
+                && playerConfig.getLives() > 1
+                ) {
+            playerConfig.respawn();
+
+        } else if (action.startsWith("RIGHT_CLICK")) {
+            MetaDungeonItem item = playerConfig.getGear().get("mainHand");
+            if (item != null) {
+                item.getInterface().onRightClick(playerConfig);
+
+            }
+        }
+    }
+
+
+    @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event) {
+        System.out.println("[WARN] Uncaught player death");
         MetaDungeonPlayer playerConfig = plugin.players.get(event.getEntity().getUniqueId());
         if (playerConfig.getInGame()) playerConfig.kill();
 
@@ -108,8 +142,8 @@ public class ServerListener implements Listener {
     @EventHandler
     public void onPlayerItemConsume(PlayerItemConsumeEvent event) {
         try {
-            plugin.players.get(event.getPlayer().getUniqueId()).changeHealth(getAdvancedItem(event.getItem()).heal_life);
-            plugin.players.get(event.getPlayer().getUniqueId()).changeStamina((double) getAdvancedItem(event.getItem()).heal_stamina);
+            getAdvancedItem(event.getItem()).consume(plugin.players.get(event.getPlayer().getUniqueId()));
+            event.setCancelled(true);
         } catch (NullPointerException ignored) {System.out.println("could not find item on consume");}
 
     }
@@ -121,6 +155,7 @@ public class ServerListener implements Listener {
             plugin.players.get(event.getWhoClicked().getUniqueId()).updateStats();
             }, 5L));
     }
+
     @EventHandler
     public void onPlayerItemHeld(PlayerItemHeldEvent event) {
         plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, () -> {
@@ -128,6 +163,9 @@ public class ServerListener implements Listener {
             plugin.players.get(event.getPlayer().getUniqueId()).updateStats();
         }, 5L));
     }
+
+
+
 
 //    @EventHandler
 //    public void onPlayerItemDamage(PlayerItemDamageEvent event) {
