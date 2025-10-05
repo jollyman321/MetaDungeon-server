@@ -19,7 +19,9 @@ import static java.lang.Math.round;
 
 
 public class MetaDungeonPlayer extends MetaDungeonEntity {
-    private final double baseStamina;
+    private final int inputDelayMax;
+    private int currentInputDelay;
+    private double baseStamina;
     private Player player;
     private final int staminaRecoveryTime;
     private int lives;
@@ -49,7 +51,7 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
         this.staminaRecoveryTime = 20;
         this.staminaRecovery = this.staminaRecoveryTime;
         this.maxHealth = 100;
-        this.lives = 3;
+        this.lives = 4;
 
 
 
@@ -59,6 +61,9 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
 
         this.attackCoolDown = 0;
         this.attackCoolDownPeak = 0;
+
+        this.inputDelayMax = 4;
+        this.currentInputDelay = 0;
 
         // remove 1.9+ weapon effect e.g sweep attack
         this.player.getAttribute(Attribute.GENERIC_ATTACK_SPEED).setBaseValue(16);
@@ -83,6 +88,8 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
 
     public boolean getInGame() {return this.inGame;}
     public void setInGame(boolean value) {this.inGame = value;}
+    public int getInputDelay() {return this.currentInputDelay;}
+    public void resetInputDelay() {this.currentInputDelay = this.inputDelayMax;}
     public boolean isDead() {return this.dead;}
 
     public boolean canAttack() {return this.attackCoolDown <= 0 &&
@@ -122,7 +129,7 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
         return this.maxStamina;
     }
     public void setMaxStamina(double amount) {
-        this.maxStamina = amount;
+        this.baseStamina = amount;
     }
 
     @Override
@@ -138,7 +145,7 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
     }
 
     public void setMaxHealth(int amount) {
-        this.maxHealth = amount;
+        this.baseHealth = amount;
     }
 
     @Override
@@ -209,6 +216,11 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
     }
 
     public void update() {
+
+        if (this.gear.get("mainHand") != null ) {
+
+        }
+
         // player updates should happen 10 times a second
         if (this.player.isSprinting() && this.stamina > 0) {
             this.changeStamina(-0.5);
@@ -233,6 +245,7 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
             this.player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_DIGGING, 4, 249));
         }
 
+        if (this.currentInputDelay > 0) this.currentInputDelay -= 1;
         this.displayActionBar();
     }
 

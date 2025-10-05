@@ -10,6 +10,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 import sbs.immovablerod.metaDungeon.classes.MetaDungeonMonster;
 import sbs.immovablerod.metaDungeon.classes.MetaDungeonItem;
+import sbs.immovablerod.metaDungeon.classes.MetaDungeonProjectile;
 import sbs.immovablerod.metaDungeon.commands.*;
 import sbs.immovablerod.metaDungeon.game.DungeonMap;
 import sbs.immovablerod.metaDungeon.game.Game;
@@ -21,6 +22,8 @@ import java.util.*;
 public final class MetaDungeon extends JavaPlugin implements Listener {
     public HashMap<UUID, MetaDungeonPlayer>     players = new HashMap<>();
     public HashMap<UUID, MetaDungeonMonster> entities = new HashMap<>();
+    public HashMap<UUID, MetaDungeonProjectile> projectiles = new HashMap<>();
+
     public List<BukkitTask> tasks = new ArrayList<>();
     public World world;
     public Game game = null;

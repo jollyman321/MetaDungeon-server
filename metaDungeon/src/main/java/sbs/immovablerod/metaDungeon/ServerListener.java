@@ -12,6 +12,7 @@ import org.bukkit.event.player.*;
 import sbs.immovablerod.metaDungeon.classes.MetaDungeonItem;
 import sbs.immovablerod.metaDungeon.classes.MetaDungeonMonster;
 import sbs.immovablerod.metaDungeon.classes.MetaDungeonPlayer;
+import sbs.immovablerod.metaDungeon.classes.MetaDungeonProjectile;
 
 import static sbs.immovablerod.metaDungeon.util.ItemUtil.getAdvancedItem;
 
@@ -101,31 +102,49 @@ public class ServerListener implements Listener {
             } else {
                 System.out.println("[WARN] unregister projectile hit caused by " + entity.getName());
             }
+        } else if (event.getEntity().getShooter() instanceof Player) {
+            System.out.println("testxx");
+            if (plugin.projectiles.containsKey(event.getEntity().getUniqueId())) {
+                System.out.println("testyy");
+                MetaDungeonMonster monster = plugin.entities.get(event.getHitEntity().getUniqueId());
+                monster.setHealth(monster.getHealth() - plugin.projectiles.get(event.getEntity().getUniqueId()).getDamage());
+            }
+
         } else {
             event.setCancelled(true);
         }
     }
 
     @EventHandler
-    public void onEntityShootBow(EntityShootBowEvent event) {}
+    public void onEntityShootBow(EntityShootBowEvent event) {
+        if (event.getEntity() instanceof Player) {
+            MetaDungeonPlayer player = plugin.players.get(event.getEntity().getUniqueId());
+            plugin.projectiles.put(
+                    event.getProjectile().getUniqueId(),
+                    new MetaDungeonProjectile(event.getEntity().getUniqueId(), player.getDamage())
+            );
+        }
+    }
 
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent event) {
 
         MetaDungeonPlayer playerConfig = plugin.players.get(event.getPlayer().getUniqueId());
+        if (playerConfig.getInputDelay() <= 0) {
+            playerConfig.resetInputDelay();
 
-        String action = event.getAction().toString();
-        if (playerConfig.isDead() && action.startsWith("LEFT_CLICK")
-                && plugin.players.size() > 1
-                && playerConfig.getLives() > 1
-                ) {
-            playerConfig.respawn();
+            String action = event.getAction().toString();
+            if (playerConfig.isDead() && action.startsWith("LEFT_CLICK")
+                    && plugin.players.size() > 1
+                    && playerConfig.getLives() > 1
+            ) {
+                playerConfig.respawn();
 
-        } else if (action.startsWith("RIGHT_CLICK")) {
-            MetaDungeonItem item = playerConfig.getGear().get("mainHand");
-            if (item != null) {
-                item.getInterface().onRightClick(playerConfig);
-
+            } else if (action.startsWith("RIGHT_CLICK")) {
+                MetaDungeonItem item = playerConfig.getGear().get("mainHand");
+                if (item != null) {
+                    item.getInterface().onRightClick(playerConfig);
+                }
             }
         }
     }

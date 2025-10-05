@@ -4,6 +4,8 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import sbs.immovablerod.metaDungeon.classes.MetaDungeonItem;
+import sbs.immovablerod.metaDungeon.util.ItemUtil;
 import sbs.immovablerod.metaDungeon.util.SQL;
 import sbs.immovablerod.metaDungeon.util.Serialize;
 
@@ -16,30 +18,17 @@ public class LoadItemFromDB implements CommandExecutor {
     // This method is called, when somebody uses our command
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        SQL database = null;
-
-        try {
-            try {
-                database = new SQL("plugins" + File.separator + "skillfulhacks" + File.separator + "database.sqlite");
-
-                Player player = (Player) sender;
-                String itemName = args[0];
-
-                ItemStack item;
-                try (ResultSet query = database.execute_query("SELECT * FROM items WHERE '" + itemName + "' IS name")) {
-                    item = Serialize.deserializeItem(query.getString("item"));
-                }
-
-                player.getInventory().addItem(item);
-
-            } catch (SQLException e) {
-                e.printStackTrace(System.err);
-            }
-
-        } finally {
-            database.Close();
-
+        if (!(sender instanceof Player)) {
+            sender.sendMessage("This command can only be run by a player.");
+            return false;
         }
+        else if (args.length != 1) {
+            return false;
+        }
+
+        MetaDungeonItem item = ItemUtil.createItem(args[0]);
+
+        ((Player) sender).getInventory().addItem(item);
         return true;
     }
 }

@@ -9,6 +9,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import sbs.immovablerod.metaDungeon.util.SQL;
+import sbs.immovablerod.metaDungeon.util.SpawnEntity;
 
 import java.io.File;
 import java.sql.ResultSet;
@@ -19,34 +20,15 @@ public class LoadEntityFromDB implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 
+        if (!(sender instanceof Player)) {
+            sender.sendMessage("This command can only be run by a player.");
+            return false;
+        } else if (args.length != 1) {
+            return false;
+        }
         Player player = (Player) sender;
 
-        //player.getWorld().spawnEntity(player.getLocation());
-        SQL database = null;
-        try {
-            database = new SQL("plugins" + File.separator + "skillfulhacks" + File.separator + "database.sqlite");
-
-
-            try (ResultSet query = database.execute_query("SELECT * FROM entities WHERE '" + args[0] + "' IS name")) {
-
-                System.out.println(query.getString("type"));
-                System.out.println(query.getString("entity"));
-
-                EntityType entityType = EntityType.valueOf(query.getString("type"));
-                Entity entity = player.getWorld().spawnEntity(player.getLocation(), entityType);
-                ReadWriteNBT nbtData = NBT.parseNBT(query.getString("entity"));
-                //nbtData.setString("CustomName", query.getString("name"));
-                NBT.modify(entity, nbt -> {
-                    nbt.mergeCompound(nbtData);
-                });
-
-            } catch (SQLException e) {
-                e.printStackTrace(System.err);
-            }
-        } finally {
-            database.Close();
-        }
-
+        SpawnEntity.spawn(args[0], player.getLocation());
         return true;
     }
 }
