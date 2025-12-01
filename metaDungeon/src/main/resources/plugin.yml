@@ -3,6 +3,7 @@ version: '1.0'
 main: sbs.immovablerod.metaDungeon.MetaDungeon
 api-version: '1.13'
 depend: [NBTAPI]
+load: STARTUP
 commands:
   test:
     description: testing

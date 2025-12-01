@@ -1,4 +1,7 @@
 package sbs.immovablerod.metaDungeon;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.tr7zw.nbtapi.iface.ReadWriteNBT;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
@@ -6,6 +9,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 import sbs.immovablerod.metaDungeon.classes.MetaDungeonMonster;
@@ -15,8 +19,13 @@ import sbs.immovablerod.metaDungeon.commands.*;
 import sbs.immovablerod.metaDungeon.game.DungeonMap;
 import sbs.immovablerod.metaDungeon.game.Game;
 import sbs.immovablerod.metaDungeon.classes.MetaDungeonPlayer;
+import sbs.immovablerod.metaDungeon.util.EmptyChunkGenerator;
 import sbs.immovablerod.metaDungeon.util.LoadSqlTable;
 import sbs.immovablerod.metaDungeon.util.RenderItems;
+import sbs.immovablerod.metaDungeon.util.RenderItemsV2;
+
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
 
 public final class MetaDungeon extends JavaPlugin implements Listener {
@@ -29,14 +38,21 @@ public final class MetaDungeon extends JavaPlugin implements Listener {
     public Game game = null;
     public DungeonMap map = null;
 
+    public final HashMap<String, HashMap<String, String>> mapsDB = LoadSqlTable.loadTable("maps", "name");
     public final HashMap<String, HashMap<String, String>> entitiesDB = LoadSqlTable.loadTable("entities", "name");
     public final HashMap<String, HashMap<String, String>> itemsDB = LoadSqlTable.loadTable("items", "name");
     public final HashMap<String, HashMap<String, String>> worldEventsDB = LoadSqlTable.loadTable("world_events", "name");
 
-    public HashMap<String, ReadWriteNBT> baseItemNbts  = RenderItems.renderBaseItemNbt(itemsDB);
     public HashMap<UUID, MetaDungeonItem> items = new HashMap<>();//RenderItems.loadAdvancedItems(itemsDB, renderedItems);
+    public final ObjectMapper objectMapper = new ObjectMapper();
+    public final JsonNode itemsV2 = objectMapper.readTree(new File("plugins" + File.separator + "metaDungeon" + File.separator + "items.json"));
+
+    public HashMap<String, ReadWriteNBT> baseItemNbts  = RenderItemsV2.renderBaseItemNbt(itemsV2);
 
     private static MetaDungeon instance;
+
+    public MetaDungeon() throws IOException {
+    }
 
     public static MetaDungeon getInstance() {
         return MetaDungeon.instance;
@@ -48,7 +64,12 @@ public final class MetaDungeon extends JavaPlugin implements Listener {
         getDataFolder().mkdirs();
         MetaDungeon.instance = this;
         world = Bukkit.getWorld("world");
+
+        System.out.println(itemsV2.at("/basicSword/displayName").asText());
+
+
         getServer().getPluginManager().registerEvents(new ServerListener(), this);
+
 
         this.getCommand("test").setExecutor(new Test());
         this.getCommand("init_map").setExecutor(new InitMap());
@@ -84,6 +105,11 @@ public final class MetaDungeon extends JavaPlugin implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         System.out.println("player " + event.getPlayer().getName() + " has joined");
+    }
+
+    @Override
+    public ChunkGenerator getDefaultWorldGenerator(String worldName, String id) {
+        return new EmptyChunkGenerator();
     }
 
 }

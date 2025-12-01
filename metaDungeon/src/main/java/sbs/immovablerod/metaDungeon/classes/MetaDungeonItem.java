@@ -4,6 +4,7 @@ import de.tr7zw.nbtapi.NBT;
 import de.tr7zw.nbtapi.iface.ReadWriteNBT;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import sbs.immovablerod.metaDungeon.elements.ItemInterface;
 import sbs.immovablerod.metaDungeon.enums.Items;
 
@@ -33,7 +34,7 @@ public class MetaDungeonItem extends ItemStack {
     private final Integer knockback;
     private final Integer damagePercent;
     private final ItemInterface itemInterface;
-    private Integer maxInternalDurability;
+    private final Integer armorPierce;
     public Integer durability;
     public Integer currentDurability;
 
@@ -60,7 +61,9 @@ public class MetaDungeonItem extends ItemStack {
                          Integer attack_speed,
                          Integer staminaCost,
                          Integer knockback,
-                         Integer damagePercent
+                         Integer damagePercent,
+                         Integer armorPierce
+
 
     ) {
         super(Material.getMaterial(type.toUpperCase()));
@@ -87,20 +90,20 @@ public class MetaDungeonItem extends ItemStack {
         this.durability = durability;
 
         this.attack_speed = attack_speed;
+        this.armorPierce = armorPierce;
         this.staminaCost = staminaCost;
 
         this.knockback = knockback;
         this.damagePercent = damagePercent;
         
         this.currentDurability = this.durability;
-        this.maxInternalDurability = (int) this.getType().getMaxDurability();
 
-        NBT.modify(this, nbt -> {
-            nbt.mergeCompound(baseNbt);
-            nbt.setUUID("id", id);
-            if (this.durability != null && this.durability != -1) {
-                nbt.setInteger("Damage", this.maxInternalDurability - this.durability);
-            }
+        NBT.modifyComponents(this, nbt -> {
+            nbt.mergeCompound(NBT.parseNBT(baseNbt.toString().replace("'", "")));
+            nbt.getOrCreateCompound("custom_data").setUUID("id", id);
+            //if (this.durability != null && this.durability != -1) {
+            //    nbt.setInteger("Damage", this.maxInternalDurability - this.durability);
+            //}
         });
         
         // implement custom item functions
@@ -121,23 +124,41 @@ public class MetaDungeonItem extends ItemStack {
         // remove item from plugin.items?
     }
 
+
     public void onTargetHit(MetaDungeonPlayer player) {
         player.changeStamina((double) - this.staminaCost);
-    /*
-        if (this.durability != null && this.durability != -1) {
-            this.currentDurability -= 1;
-            System.out.println(this.currentDurability);
-            System.out.println(round(this.maxInternalDurability - ((float) this.currentDurability / (float)  this.durability) * (float)  this.maxInternalDurability));
-            NBT.modify(this, nbt -> {
-                nbt.setInteger("Damage", 10); //round(this.maxInternalDurability - ((float) this.currentDurability / (float)  this.durability) * (float)  this.maxInternalDurability));
-            });
-        }*/
+
     }
+
+    public void changeDurability(int amount, ItemStack craftItemStack, MetaDungeonPlayer player) {
+
+        if (this.durability > -1) {
+            this.currentDurability -= amount;
+            player.updateInventory();
+            craftItemStack.setDurability((short) ((this.durability - this.currentDurability) * 2));
+            NBT.modifyComponents(craftItemStack, nbt -> {
+                int location = nbt.getOrCreateCompound("minecraft:custom_data").getInteger("durability_line");
+                nbt.getCompoundList("minecraft:lore").get(location).setString("text", "Durability: @1/@2".replace
+                        ("@1", String.valueOf(this.currentDurability)).replace
+                        ("@2", String.valueOf(this.durability))
+                );
+            });
+            if (this.durability < 1) {
+                for (int i = 0; i < player.getPlayer().getInventory().getSize(); i++) {
+                    if (player.getPlayer().getInventory().getItem(i).getDurability() < 1)
+                        player.getPlayer().getInventory().getItem(i).setType(Material.AIR);
+                }
+            }
+        }
+    }
+
+
     public UUID getId() {return this.id;}
     public Integer getAttackSpeed() {return this.attack_speed;}
     public Integer getStaminaCost() {return this.staminaCost;}
     public Integer getKnockback() {return this.knockback;}
     public Integer getDamage() {return this.damage;}
+    public Integer getArmorPierce() {return this.armorPierce;}
     public Integer getDamagePercent() {return this.damagePercent;}
     public Integer getHealth() {return this.health;}
     public Integer getStamina() {return this.stamina;}

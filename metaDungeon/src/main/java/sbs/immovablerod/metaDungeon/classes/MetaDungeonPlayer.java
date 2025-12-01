@@ -2,12 +2,14 @@ package sbs.immovablerod.metaDungeon.classes;
 
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
+import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import sbs.immovablerod.metaDungeon.MetaDungeon;
 import sbs.immovablerod.metaDungeon.enums.Constants;
 import sbs.immovablerod.metaDungeon.enums.Symbols;
 import sbs.immovablerod.metaDungeon.util.ItemUtil;
@@ -19,7 +21,10 @@ import static java.lang.Math.round;
 
 
 public class MetaDungeonPlayer extends MetaDungeonEntity {
+    private final MetaDungeon plugin = MetaDungeon.getInstance();
     private final int inputDelayMax;
+    private final int maxInvincibilityFrames;
+    private int invincibilityFrames;
     private int currentInputDelay;
     private double baseStamina;
     private Player player;
@@ -39,6 +44,7 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
     private Integer maxHealth;
 
     public MetaDungeonPlayer(Player player) {
+
         super(100, 0, 10, 0, 0, 0);
 
         this.inGame = false;
@@ -65,22 +71,34 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
         this.inputDelayMax = 4;
         this.currentInputDelay = 0;
 
+        this.maxInvincibilityFrames = 10;
+        this.invincibilityFrames = 0;
         // remove 1.9+ weapon effect e.g sweep attack
-        this.player.getAttribute(Attribute.GENERIC_ATTACK_SPEED).setBaseValue(16);
-        this.player.getAttribute(Attribute.GENERIC_ARMOR).setBaseValue(-20);
+        this.player.getAttribute(Attribute.ATTACK_SPEED).setBaseValue(16);
+        this.player.getAttribute(Attribute.ARMOR).setBaseValue(-20);
+        this.player.getAttribute(Attribute.ENTITY_INTERACTION_RANGE).setBaseValue(0);
 
-
+        this.setHealth(100);
+        this.setStamina(100.0);
 
     }
 
     public void onTargetHit() {
-        for (MetaDungeonItem item : this.gear.values()) {
-            if (item != null) item.onTargetHit(this);
+        if (this.gear.get("mainHand") != null) {
+            this.gear.get("mainHand").onTargetHit(this);
+            // note that the weapon durability is changed during the attack
+            // this just updates the item ui
+            this.gear.get("mainHand").changeDurability(1, this.getPlayer().getInventory().getItemInMainHand(), this);
         }
+        ;
+
         if (this.gear.get("mainHand") != null && this.gear.get("mainHand").getAttackSpeed() >= 1) {
             this.attackCoolDown = ((float) 10 /((float) this.gear.get("mainHand").getAttackSpeed() /10));
             this.attackCoolDownPeak = this.attackCoolDown;
-            this.player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_DIGGING, 2 * (int) this.attackCoolDown, 249));
+            plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                this.player.addPotionEffect(new PotionEffect(PotionEffectType.HASTE, (2 * (int) this.attackCoolDown), 255));
+            }, 4L));
+
         }
 
 
@@ -90,6 +108,8 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
     public void setInGame(boolean value) {this.inGame = value;}
     public int getInputDelay() {return this.currentInputDelay;}
     public void resetInputDelay() {this.currentInputDelay = this.inputDelayMax;}
+    public boolean isInvincible() {return this.invincibilityFrames > 0;}
+    public void resetInvincibility() {this.invincibilityFrames = this.maxInvincibilityFrames;}
     public boolean isDead() {return this.dead;}
 
     public boolean canAttack() {return this.attackCoolDown <= 0 &&
@@ -162,6 +182,7 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
         this.damage = this.baseDamage;
         this.movementSpeed = this.baseMovementSpeed;
         this.knockback = this.baseKnockback;
+        this.armorPierce = this.baseArmorPierce;
         this.maxHealth = this.baseHealth;
         this.maxStamina = this.baseStamina;
 
@@ -173,6 +194,7 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
                 this.damage  += item.damage;
                 this.movementSpeed += item.movement;
                 this.knockback += item.getKnockback();
+                this.armorPierce += item.getArmorPierce();
 
                 this.maxHealth  += item.getHealth();
                 this.maxStamina += item.getStamina();
@@ -242,10 +264,11 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
         }
 
         if (this.gear.get("mainHand") != null && this.stamina < this.gear.get("mainHand").getStaminaCost()) {
-            this.player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_DIGGING, 4, 249));
+            this.player.addPotionEffect(new PotionEffect(PotionEffectType.HASTE, 4, 255));
         }
 
         if (this.currentInputDelay > 0) this.currentInputDelay -= 1;
+        if (this.invincibilityFrames > 0) this.invincibilityFrames -= 1;
         this.displayActionBar();
     }
 
@@ -271,5 +294,24 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
         this.player.setGameMode(GameMode.SPECTATOR);
         this.player.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, 99999, 0, true, false));
 
+    }
+
+    @Override
+    public void receiveAttack(MetaDungeonEntity attacker) {
+        super.receiveAttack(attacker);
+        System.out.println("attack received");
+        this.invincibilityFrames = this.maxInvincibilityFrames;
+
+        for (String key: this.gear.keySet()) {
+            MetaDungeonItem item = this.gear.get(key);
+            if (item != null && item.category.equals("armor")) {
+                if (key.equals("helmet")) item.changeDurability(1, this.getPlayer().getInventory().getHelmet(), this);
+                if (key.equals("chestplate")) item.changeDurability(1, this.getPlayer().getInventory().getChestplate(), this);
+                if (key.equals("leggings")) item.changeDurability(1, this.getPlayer().getInventory().getLeggings(), this);
+                if (key.equals("boots")) item.changeDurability(1, this.getPlayer().getInventory().getBoots(), this);
+
+
+            }
+        }
     }
 }

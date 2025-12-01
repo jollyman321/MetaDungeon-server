@@ -18,8 +18,8 @@ public class InitMap implements CommandExecutor {
     // This method is called, when somebody uses our command
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        // /init_map <name> <x> <y> <z> <xdelta> <ydelta> <zdelta>
-        if (args.length == 7) {
+        // /init_map <name> <x> <y> <z> <xdelta> <ydelta> <zdelta> <spawnx> <spawny> <spawnz>
+        if (args.length == 10) {
             List<List<Integer>> valid_points = Generate.create_lot_box_map(Integer.parseInt(args[1]),
                     Integer.parseInt(args[2]),
                     Integer.parseInt(args[3]),
@@ -27,7 +27,7 @@ public class InitMap implements CommandExecutor {
                     Integer.parseInt(args[5]),
                     Integer.parseInt(args[6]));
 
-            SQL database = new SQL("plugins" + File.separator + "skillfulhacks" + File.separator + "database.sqlite");
+            SQL database = new SQL("plugins" + File.separator + "metaDungeon" + File.separator + "database.sqlite");
 
 
             try {
@@ -45,9 +45,10 @@ public class InitMap implements CommandExecutor {
                         chest_locations +
                         "','" +
                         "test" +
-                        "')";
+                        "'," +
+                        args[7] + "," + args[8] + "," + args[9] +
+                        ")";
                 database.execute_write(
-                        "CREATE TABLE IF NOT EXISTS maps (name string, x integer, y integer, z integer, xdelta integer, ydelta integer, zdelta integer, chest_locations string, mob_locations string)",
                         "INSERT INTO maps values" + sql_command
                 );
 

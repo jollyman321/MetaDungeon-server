@@ -36,15 +36,20 @@ public class ServerListener implements Listener {
     @EventHandler
     public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
         if (event.getEntity() instanceof Player) {
+            System.out.println("attack reg");
             Player player = (Player) event.getEntity();
             MetaDungeonPlayer playerConfig = plugin.players.get(player.getUniqueId());
+            if (playerConfig.isInvincible()) event.setCancelled(true);
+            else {
 
-            MetaDungeonMonster attacker = plugin.entities.get(event.getDamager().getUniqueId());
-            event.setDamage(0);
-            try {
-                playerConfig.receiveAttack(attacker);
-            } catch (NullPointerException e) {
-                System.out.println("[WARN] could not find entity profile for " + event.getDamager().getUniqueId());
+                MetaDungeonMonster attacker = plugin.entities.get(event.getDamager().getUniqueId());
+                event.setDamage(0);
+                System.out.println("attack landed");
+                try {
+                    playerConfig.receiveAttack(attacker);
+                } catch (NullPointerException e) {
+                    System.out.println("[WARN] could not find entity profile for " + event.getDamager().getUniqueId());
+                }
             }
 
         } else if (event.getDamager() instanceof Player) {

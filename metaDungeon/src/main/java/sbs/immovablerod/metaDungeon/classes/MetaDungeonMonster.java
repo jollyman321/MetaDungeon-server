@@ -10,6 +10,8 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import sbs.immovablerod.metaDungeon.enums.Constants;
 import sbs.immovablerod.metaDungeon.enums.Symbols;
 import sbs.immovablerod.metaDungeon.MetaDungeon;
@@ -19,7 +21,7 @@ import java.util.ArrayList;
 public class MetaDungeonMonster extends MetaDungeonEntity {
     private final static MetaDungeon plugin = MetaDungeon.getInstance();
     private final Entity entity;
-    private ArrayList<Object> effects;
+    private final ArrayList<Object> effects;
 
     public MetaDungeonMonster(EntityType type,
                               Location spawnLocation,
@@ -38,21 +40,19 @@ public class MetaDungeonMonster extends MetaDungeonEntity {
         super(health, damage, movement, defence, 0, 0);
         this.entity = plugin.world.spawnEntity(spawnLocation, type);
 
-
         this.effects = new ArrayList<>();
 
         setMovementSpeed(this.movementSpeed);
 
         NBT.modify(this.entity, nbt -> {
             nbt.setBoolean("PersistenceRequired", true);
-            nbt.setBoolean("Paper.ShouldBurnInDay", false);
             nbt.setBoolean("IsBaby", false);
             nbt.setBoolean("CustomNameVisible", true);
 
-            ReadWriteNBTCompoundList modifierCompound = nbt.getCompoundList("Attributes");
+            ReadWriteNBTCompoundList modifierCompound = nbt.getCompoundList("attributes");
             ReadWriteNBT movementCompound = modifierCompound.addCompound();
-            movementCompound.setString("Name", "generic.follow_range");
-            movementCompound.setInteger("Base", 20);
+            movementCompound.setString("id", "minecraft:follow_range");
+            movementCompound.setInteger("base", 20);
 
             // this doesn't work for some reason?
 
@@ -72,16 +72,23 @@ public class MetaDungeonMonster extends MetaDungeonEntity {
         if (chestplate != null) livingEntity.getEquipment().setChestplate(new ItemStack(Material.getMaterial(chestplate.toUpperCase())));
         if (leggings != null) livingEntity.getEquipment().setLeggings(new ItemStack(Material.getMaterial(leggings.toUpperCase())));
         if (boots != null) livingEntity.getEquipment().setBoots(new ItemStack(Material.getMaterial(boots.toUpperCase())));
-        livingEntity.setNoDamageTicks(0);
+        //livingEntity.setno;
+
+        livingEntity.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 99999, 4, true, false));
 
 
         this.updateDisplay();
     }
 
     public void updateDisplay() {
+//        NBT.modify(this.entity, nbt -> {
+//            nbt.setString("CustomName", "{\"text\":\"@HEALTH\", \"color\":\"red\"}".replace(
+//                    "@HEALTH", String.valueOf(this.health) + Symbols.HEART
+//            ));
+//        });
         NBT.modify(this.entity, nbt -> {
-            nbt.setString("CustomName", "{\"text\":\"@HEALTH\",\"color\":\"red\"}".replace(
-                    "@HEALTH", String.valueOf(this.health) + Symbols.HEART
+            nbt.mergeCompound(NBT.parseNBT("{CustomName:{\"text\":\"@HEALTH\",\"color\":\"red\"}}".replace(
+                    "@HEALTH", String.valueOf(this.health) + Symbols.HEART)
             ));
         });
     }
@@ -100,10 +107,10 @@ public class MetaDungeonMonster extends MetaDungeonEntity {
         this.movementSpeed = value;
         double trueSpeed = (double) movementSpeed / Constants.MONSTER_SPEED_MODIFIER.value();
         NBT.modify(this.entity, nbt -> {
-            ReadWriteNBTCompoundList modifierCompound = nbt.getCompoundList("Attributes");
+            ReadWriteNBTCompoundList modifierCompound = nbt.getCompoundList("attributes");
             ReadWriteNBT movementCompound = modifierCompound.addCompound();
-            movementCompound.setString("Name", "generic.movement_speed");
-            movementCompound.setDouble("Base",  trueSpeed);
+            movementCompound.setString("id", "minecraft:movement_speed");
+            movementCompound.setDouble("base",  trueSpeed);
         });
     }
 
@@ -112,7 +119,13 @@ public class MetaDungeonMonster extends MetaDungeonEntity {
     }
 
     public void killed() {
-        plugin.world.playEffect(this.entity.getLocation(), Effect.SMOKE, 40);
+        plugin.world.playEffect(this.entity.getLocation(), Effect.SMOKE, 40, 100);
         this.entity.remove();
+    }
+
+    @Override
+    public void receiveAttack(MetaDungeonEntity attacker) {
+        super.receiveAttack(attacker);
+        ((LivingEntity) this.entity).setNoDamageTicks(0);
     }
 }

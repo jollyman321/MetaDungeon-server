@@ -40,9 +40,9 @@ public class Game {
     private int entityCount;
     public void startGame(String name) {
         Location spawnLocation = new Location(plugin.world,
-                GConfig.spawnLocationCoords.get(0),
-                GConfig.spawnLocationCoords.get(1),
-                GConfig.spawnLocationCoords.get(2), 0, 0);
+                Double.parseDouble(plugin.mapsDB.get(name).get("spawnx")),
+                Double.parseDouble(plugin.mapsDB.get(name).get("spawny")),
+                Double.parseDouble(plugin.mapsDB.get(name).get("spawnz")));
 
         for (UUID key : plugin.players.keySet()) {
             // reload player stats to base state
@@ -152,8 +152,9 @@ public class Game {
                     List<Integer> stackSize = plugin.getConfig().getIntegerList("item-stack-sizes." + item.category);
                     item.setAmount(Random.getRandInt(stackSize.get(0), stackSize.get(1)));
                     chest.getInventory().setItem(Random.getRandInt(1, 26), item);
-                } catch (IllegalArgumentException ignore) {
-                    System.out.println("[WARN] failed to create item");
+                } catch (IllegalArgumentException e) {
+                    System.out.println("[ERROR] failed to create item");
+                    System.out.println(e);
                 }
             }
         }

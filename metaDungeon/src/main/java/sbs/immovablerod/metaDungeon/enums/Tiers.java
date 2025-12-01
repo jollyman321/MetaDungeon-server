@@ -25,6 +25,12 @@ public enum Tiers {
         public Colors color() {
             return Colors.LIGHT_PURPLE;
         }
+    },
+    TEN (10) {
+        @Override
+        public Colors color() {
+            return Colors.LIGHT_PURPLE;
+        }
     };
 
     final private int id;

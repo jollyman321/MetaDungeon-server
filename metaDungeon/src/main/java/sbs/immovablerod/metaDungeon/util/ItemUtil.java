@@ -1,9 +1,11 @@
 package sbs.immovablerod.metaDungeon.util;
 
 import de.tr7zw.nbtapi.NBT;
+import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import sbs.immovablerod.metaDungeon.MetaDungeon;
 import sbs.immovablerod.metaDungeon.classes.MetaDungeonItem;
+import sbs.immovablerod.metaDungeon.classes.MetaDungeonPlayer;
 
 import java.util.UUID;
 
@@ -17,16 +19,20 @@ public class ItemUtil {
         }
         return null;
     }
+
     public static UUID getItemId(ItemStack item) {
         UUID targetId;
-        try {
-            targetId = NBT.get(item, nbt -> (UUID) nbt.getUUID("id"));
-        } catch (NullPointerException ignored) {return null;}
+        if (item.getType() != Material.AIR) {
+            try {
+                targetId = NBT.getComponents(item, nbt -> (UUID) nbt.getCompound("minecraft:custom_data").getUUID("id"));
+            } catch (NullPointerException ignored) {
+                return null;
+            }
 
-        for (MetaDungeonItem ele : plugin.items.values()) {
-            if (ele.getId().equals(targetId)) return targetId;
+            for (MetaDungeonItem ele : plugin.items.values()) {
+                if (ele.getId().equals(targetId)) return targetId;
+            }
         }
-
         return null;
     }
     public static MetaDungeonItem createItem(String itemName) {
@@ -48,7 +54,7 @@ public class ItemUtil {
                 plugin.itemsDB.get(itemName).get("category"),
                 Integer.parseInt(plugin.itemsDB.get(itemName).get("tier")),
                 Integer.parseInt(plugin.itemsDB.get(itemName).get("rarity")),
-                Integer.parseInt(plugin.itemsDB.get(itemName).get("cost")),
+                0,
                 Integer.parseInt(plugin.itemsDB.get(itemName).get("consumable")),
                 Integer.parseInt(plugin.itemsDB.get(itemName).get("randomGen")),
                 Integer.parseInt(plugin.itemsDB.get(itemName).get("damage")),
@@ -56,19 +62,19 @@ public class ItemUtil {
                 Integer.parseInt(plugin.itemsDB.get(itemName).get("movement")),
                 Integer.parseInt(plugin.itemsDB.get(itemName).get("maxHealth")),
                 Integer.parseInt(plugin.itemsDB.get(itemName).get("maxStamina")),
-                Integer.parseInt(plugin.itemsDB.get(itemName).get("weight")),
+                0,
                 Integer.parseInt(plugin.itemsDB.get(itemName).get("heal_life")),
                 Integer.parseInt(plugin.itemsDB.get(itemName).get("heal_stamina")),
                 Integer.parseInt(plugin.itemsDB.get(itemName).get("durability")),
                 Integer.parseInt(plugin.itemsDB.get(itemName).get("attackSpeed")),
                 Integer.parseInt(plugin.itemsDB.get(itemName).get("staminaCost")),
                 Integer.parseInt(plugin.itemsDB.get(itemName).get("knockback")),
-                Integer.parseInt(plugin.itemsDB.get(itemName).get("damagePercent"))
-
-
+                Integer.parseInt(plugin.itemsDB.get(itemName).get("damagePercent")),
+                Integer.parseInt(plugin.itemsDB.get(itemName).get("armorPierce"))
         );
         plugin.items.put(id, item);
         return item;
     }
+
 }
 
