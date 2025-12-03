@@ -1,5 +1,6 @@
 package sbs.immovablerod.metaDungeon.classes;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import de.tr7zw.nbtapi.NBT;
 import de.tr7zw.nbtapi.iface.ReadWriteNBT;
 import org.bukkit.Material;
@@ -14,21 +15,18 @@ import static java.lang.Math.round;
 
 public class MetaDungeonItem extends ItemStack {
     public final String name;
+    private final UUID id;
+    public final JsonNode template;
     public final String category;
     public final Integer tier;
     public final Integer rarity;
-    public final Integer cost;
-    public final Integer consumable;
-    public final Integer randomGen;
+    //public final Integer randomGen;
     public final Integer damage;
     public final Integer defence;
     public final Integer movement;
     public final Integer health;
-    public final Integer healLife;
-    public final Integer weight;
     public final Integer stamina;
-    public final Integer healStamina;
-    private final UUID id;
+
     private final Integer attack_speed;
     private final Integer staminaCost;
     private final Integer knockback;
@@ -42,59 +40,30 @@ public class MetaDungeonItem extends ItemStack {
                          String name,
                          UUID id,
                          ReadWriteNBT baseNbt,
-                         String type,
-                         String category,
-                         Integer tier,
-                         Integer rarity,
-                         Integer cost,
-                         Integer consumable,
-                         Integer randomGen,
-                         Integer damage,
-                         Integer defence,
-                         Integer movement,
-                         Integer health,
-                         Integer stamina,
-                         Integer weight,
-                         Integer healLife,
-                         Integer healStamina,
-                         Integer durability,
-                         Integer attack_speed,
-                         Integer staminaCost,
-                         Integer knockback,
-                         Integer damagePercent,
-                         Integer armorPierce
-
-
+                         JsonNode template
     ) {
-        super(Material.getMaterial(type.toUpperCase()));
-
+        super(Material.getMaterial( template.path("displayType").asText("BARRIER").toUpperCase()));
 
         //this.item = item;
         this.name = name;
         this.id = id;
-        this.category = category;
-        this.tier = tier;
-        this.rarity = rarity;
-        this.cost = cost;
-        this.consumable = consumable;
+        this.template = template;
+        this.category = template.at("/category").asText();
+        this.tier = template.at("/tier").asInt();
+        this.rarity = template.at("/rarity").asInt();
+        this.damage = template.at("/damage").asInt();
+        this.defence = template.at("/defence").asInt();
+        this.movement = template.at("/movementSpeed").asInt();
+        this.health = template.at("/health").asInt();
+        this.stamina = template.at("/stamina").asInt();
+        this.durability =template.at("/durability").asInt();
 
-        this.randomGen = randomGen;
-        this.damage = damage;
-        this.defence = defence;
-        this.movement = movement;
-        this.health = health;
-        this.stamina = stamina;
-        this.weight = weight;
-        this.healLife = healLife;
-        this.healStamina = healStamina;
-        this.durability = durability;
+        this.attack_speed = template.at("/attackSpeed").asInt();
+        this.armorPierce = template.at("/armorPierce").asInt();
+        this.staminaCost = template.at("/staminaCost").asInt();
 
-        this.attack_speed = attack_speed;
-        this.armorPierce = armorPierce;
-        this.staminaCost = staminaCost;
-
-        this.knockback = knockback;
-        this.damagePercent = damagePercent;
+        this.knockback = template.at("/knockback").asInt();
+        this.damagePercent = template.at("/damagePercent").asInt();
         
         this.currentDurability = this.durability;
 
@@ -111,8 +80,10 @@ public class MetaDungeonItem extends ItemStack {
 
     }
     public void consume(MetaDungeonPlayer player) {
-        player.changeHealth(this.getHealLife());
-        player.changeStamina((double) this.getHealStamina());
+
+        player.changeMaxHealth(this.template.at("/onConsume/changeMaxHealth").asInt(0));
+        player.changeHealth(this.template.at("/onConsume/changeHealth").asInt(0));
+        player.changeStamina(this.template.at("/onConsume/changeStamina").asDouble(0));
 
         if (player.getPlayer().getInventory().getItemInMainHand().getAmount() > 1) {
             player.getPlayer().getInventory().getItemInMainHand().setAmount(player.getPlayer().getInventory().getItemInMainHand().getAmount() - 1);
@@ -120,7 +91,6 @@ public class MetaDungeonItem extends ItemStack {
             player.getPlayer().getInventory().setItemInMainHand(null);
         }
         player.getGear().put("mainHand", null);
-
         // remove item from plugin.items?
     }
 
@@ -163,8 +133,12 @@ public class MetaDungeonItem extends ItemStack {
     public Integer getHealth() {return this.health;}
     public Integer getStamina() {return this.stamina;}
 
-    public Integer getHealLife() {return this.healLife;}
-    public Integer getHealStamina() {return this.healStamina;}
+    public boolean isConsumable() {
+        if (this.template.has("onConsume")) {
+            return true;
+        }
+        return false;
 
+    }
     public ItemInterface getInterface() {return this.itemInterface;}
 }

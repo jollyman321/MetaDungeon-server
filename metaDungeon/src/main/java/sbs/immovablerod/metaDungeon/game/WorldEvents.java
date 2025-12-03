@@ -21,7 +21,6 @@ public class WorldEvents {
         Message.messageAll("[EVENT] " + Colors.RED.code() + "Some monsters have mutated beware!" , Colors.DARK_GREEN);
         for (MetaDungeonMonster entity : plugin.entities.values()) {
             if (Random.getRandInt(1,2) ==  2) {
-                entity.addEffect("health_boost_add", (int) Math.round(entity.getHealth() * 0.1), -1);
             }
         }
     }
@@ -29,7 +28,6 @@ public class WorldEvents {
     private static void monsterSpeedRush(Game root) {
         Message.messageAll("[EVENT] " + Colors.RED.code() + "All monsters have gain a sudden burst of energy" , Colors.DARK_GREEN);
         for (MetaDungeonMonster entity : plugin.entities.values()) {
-            entity.addEffect("speed_boost", (int) Math.round(entity.getMovementSpeed() * 0.5), 300);
         }
     }
 
@@ -37,7 +35,6 @@ public class WorldEvents {
         Message.messageAll("[EVENT] " + Colors.RED.code() + "Some monsters have mutated beware! (speed)" , Colors.DARK_GREEN);
         for (MetaDungeonMonster entity : plugin.entities.values()) {
             if (Random.getRandInt(1,2) ==  2) {
-                entity.addEffect("speed_boost", (int) Math.round(entity.getMovementSpeed() * 0.05), -1);
             }
 
         }

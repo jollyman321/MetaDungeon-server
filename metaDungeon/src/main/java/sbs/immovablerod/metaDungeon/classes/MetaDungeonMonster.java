@@ -1,5 +1,6 @@
 package sbs.immovablerod.metaDungeon.classes;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import de.tr7zw.nbtapi.NBT;
 import de.tr7zw.nbtapi.iface.ReadWriteNBT;
 import de.tr7zw.nbtapi.iface.ReadWriteNBTCompoundList;
@@ -18,27 +19,23 @@ import sbs.immovablerod.metaDungeon.MetaDungeon;
 
 import java.util.ArrayList;
 
+import static sbs.immovablerod.metaDungeon.util.EntityUtil.getScaledInt;
+
 public class MetaDungeonMonster extends MetaDungeonEntity {
     private final static MetaDungeon plugin = MetaDungeon.getInstance();
     private final Entity entity;
     private final ArrayList<Object> effects;
 
-    public MetaDungeonMonster(EntityType type,
-                              Location spawnLocation,
-                              int health,
-                              int damage,
-                              int movement,
-                              int defence,
+    public MetaDungeonMonster(JsonNode template, Location spawnLocation, int level) {
+        super(getScaledInt(template, "baseHealth", "healthScaling", level),
+                getScaledInt(template, "baseDamage", "damageScaling", level),
+                getScaledInt(template, "baseMovementSpeed", "movementSpeedScaling", level),
+                getScaledInt(template, "baseDefence", "defenceScaling", level), 0, 0);
 
-                              String mainHand,
-                              String offHand,
-                              String helmet,
-                              String chestplate,
-                              String leggings,
-                              String boots
-                          ) {
-        super(health, damage, movement, defence, 0, 0);
-        this.entity = plugin.world.spawnEntity(spawnLocation, type);
+
+
+        this.entity = plugin.world.spawnEntity(spawnLocation,
+                EntityType.valueOf(template.path("displayType").asText("ZOMBIE")));
 
         this.effects = new ArrayList<>();
 
@@ -66,15 +63,15 @@ public class MetaDungeonMonster extends MetaDungeonEntity {
         });
 
         LivingEntity livingEntity = (LivingEntity) this.entity;
-        if (mainHand != null) livingEntity.getEquipment().setItemInMainHand(new ItemStack(Material.getMaterial(mainHand.toUpperCase())));
-        if (offHand != null) livingEntity.getEquipment().setItemInOffHand(new ItemStack(Material.getMaterial(offHand.toUpperCase())));
-        if (helmet != null) livingEntity.getEquipment().setHelmet(new ItemStack(Material.getMaterial(helmet.toUpperCase())));
-        if (chestplate != null) livingEntity.getEquipment().setChestplate(new ItemStack(Material.getMaterial(chestplate.toUpperCase())));
-        if (leggings != null) livingEntity.getEquipment().setLeggings(new ItemStack(Material.getMaterial(leggings.toUpperCase())));
-        if (boots != null) livingEntity.getEquipment().setBoots(new ItemStack(Material.getMaterial(boots.toUpperCase())));
+        //if (mainHand != null) livingEntity.getEquipment().setItemInMainHand(new ItemStack(Material.getMaterial(mainHand.toUpperCase())));
+        //if (offHand != null) livingEntity.getEquipment().setItemInOffHand(new ItemStack(Material.getMaterial(offHand.toUpperCase())));
+        //if (helmet != null) livingEntity.getEquipment().setHelmet(new ItemStack(Material.getMaterial(helmet.toUpperCase())));
+        //if (chestplate != null) livingEntity.getEquipment().setChestplate(new ItemStack(Material.getMaterial(chestplate.toUpperCase())));
+        //if (leggings != null) livingEntity.getEquipment().setLeggings(new ItemStack(Material.getMaterial(leggings.toUpperCase())));
+        //if (boots != null) livingEntity.getEquipment().setBoots(new ItemStack(Material.getMaterial(boots.toUpperCase())));
         //livingEntity.setno;
 
-        livingEntity.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 99999, 4, true, false));
+        livingEntity.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 99999, 5, true, false));
 
 
         this.updateDisplay();

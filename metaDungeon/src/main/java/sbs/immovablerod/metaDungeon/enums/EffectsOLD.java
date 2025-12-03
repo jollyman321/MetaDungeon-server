@@ -1,6 +1,6 @@
 package sbs.immovablerod.metaDungeon.enums;
 
-public enum Effects
+public enum EffectsOLD
 {
     HEALTH_BOOST_ADD("health_boost_add"),
     SPEED_BOOST("speed_boost"),
@@ -8,7 +8,7 @@ public enum Effects
 
 
     final private String value;
-    Effects(String value) {
+    EffectsOLD(String value) {
         this.value = value;
     }
 

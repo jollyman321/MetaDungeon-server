@@ -130,6 +130,17 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
 
     public Integer getMaxHealth() {return this.maxHealth;}
 
+
+    public void changeMaxHealth(int amount) {
+        this.setMaxHealth(this.baseHealth + amount);
+    }
+
+    public void setMaxHealth(int amount) {
+        this.baseHealth = amount;
+        this.updateStats();
+    }
+
+
     public Integer getLives() {return this.lives;}
 
     public HashMap<String, MetaDungeonItem> getGear() {return this.gear;}
@@ -164,9 +175,7 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
         this.displayActionBar();
     }
 
-    public void setMaxHealth(int amount) {
-        this.baseHealth = amount;
-    }
+
 
     @Override
     public void setMovementSpeed(float value) {
@@ -177,12 +186,9 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
         this.setHealth(Math.min(this.health + amount, this.maxHealth));
     }
 
+    @Override
     public void updateStats() {
-        this.defence = this.baseDefence;
-        this.damage = this.baseDamage;
-        this.movementSpeed = this.baseMovementSpeed;
-        this.knockback = this.baseKnockback;
-        this.armorPierce = this.baseArmorPierce;
+        super.updateStats();
         this.maxHealth = this.baseHealth;
         this.maxStamina = this.baseStamina;
 
@@ -202,8 +208,6 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
         }
 
         this.damage = round(this.damage * damagePercentBoost);
-
-
 
         this.setMovementSpeed(this.movementSpeed);
         this.displayActionBar();

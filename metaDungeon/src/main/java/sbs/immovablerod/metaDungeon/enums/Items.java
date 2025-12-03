@@ -15,18 +15,6 @@ public enum Items
         public ItemInterface itemInterface(MetaDungeonItem root) {
             return new Dummy(root);
         }
-    },
-    SMALL_HEALTH_CRYSTAL("small_health_crystal") {
-        @Override
-        public ItemInterface itemInterface(MetaDungeonItem root) {
-            return new SmallHealthCrystal(root);
-        }
-    },
-    SMALL_STAMINA_CRYSTAL("small_stamina_crystal") {
-        @Override
-        public ItemInterface itemInterface(MetaDungeonItem root) {
-            return new SmallStaminaCrystal(root);
-        }
     };
 
 

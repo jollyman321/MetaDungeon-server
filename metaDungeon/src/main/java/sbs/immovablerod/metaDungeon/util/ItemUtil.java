@@ -38,39 +38,15 @@ public class ItemUtil {
     public static MetaDungeonItem createItem(String itemName) {
         if (itemName == null) return null;
 
-        String type;
-        if (plugin.itemsDB.get(itemName).get("type") == null) {
-            type = "BARRIER";
-        } else {
-            type = plugin.itemsDB.get(itemName).get("type");
-        }
+        String type = plugin.itemsV2.path(itemName).path("displayType").asText("BARRIER");
+
         UUID id = UUID.randomUUID();
 
         MetaDungeonItem item = new MetaDungeonItem(
                 itemName,
                 id,
                 plugin.baseItemNbts.get(itemName),
-                type,
-                plugin.itemsDB.get(itemName).get("category"),
-                Integer.parseInt(plugin.itemsDB.get(itemName).get("tier")),
-                Integer.parseInt(plugin.itemsDB.get(itemName).get("rarity")),
-                0,
-                Integer.parseInt(plugin.itemsDB.get(itemName).get("consumable")),
-                Integer.parseInt(plugin.itemsDB.get(itemName).get("randomGen")),
-                Integer.parseInt(plugin.itemsDB.get(itemName).get("damage")),
-                Integer.parseInt(plugin.itemsDB.get(itemName).get("defence")),
-                Integer.parseInt(plugin.itemsDB.get(itemName).get("movement")),
-                Integer.parseInt(plugin.itemsDB.get(itemName).get("maxHealth")),
-                Integer.parseInt(plugin.itemsDB.get(itemName).get("maxStamina")),
-                0,
-                Integer.parseInt(plugin.itemsDB.get(itemName).get("heal_life")),
-                Integer.parseInt(plugin.itemsDB.get(itemName).get("heal_stamina")),
-                Integer.parseInt(plugin.itemsDB.get(itemName).get("durability")),
-                Integer.parseInt(plugin.itemsDB.get(itemName).get("attackSpeed")),
-                Integer.parseInt(plugin.itemsDB.get(itemName).get("staminaCost")),
-                Integer.parseInt(plugin.itemsDB.get(itemName).get("knockback")),
-                Integer.parseInt(plugin.itemsDB.get(itemName).get("damagePercent")),
-                Integer.parseInt(plugin.itemsDB.get(itemName).get("armorPierce"))
+                plugin.itemsV2.path(itemName)
         );
         plugin.items.put(id, item);
         return item;

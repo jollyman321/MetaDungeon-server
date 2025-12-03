@@ -1,11 +1,13 @@
 package sbs.immovablerod.metaDungeon.classes;
 
-import sbs.immovablerod.metaDungeon.elements.BaseEffect;
-import sbs.immovablerod.metaDungeon.util.EffectUtils;
-
+import org.bukkit.Bukkit;
+import sbs.immovablerod.metaDungeon.MetaDungeon;
+import sbs.immovablerod.metaDungeon.enums.Effects;
 import java.util.ArrayList;
 
 public class MetaDungeonEntity {
+    private final MetaDungeon plugin = MetaDungeon.getInstance();
+
     public int baseHealth;
     public int baseDamage;
     public float baseMovementSpeed;
@@ -20,7 +22,7 @@ public class MetaDungeonEntity {
     public int knockback;
     public int armorPierce;
 
-    public ArrayList<BaseEffect> activeEffects;
+    public ArrayList<MetaDungeonEffect> activeEffects;
 
     public MetaDungeonEntity (
             int health,
@@ -52,19 +54,32 @@ public class MetaDungeonEntity {
                 1));
     }
 
-    public void addEffect(String effectName, int value, int duration) {
+    public void addEffect(MetaDungeonEffect effect) {
 
-        BaseEffect effect = EffectUtils.getEffect(effectName, this, value, duration);
-        if (effect != null) {
-            if (effect.isPersistent()) {
-                this.activeEffects.add(effect);
-            }
-        } else {
-            System.out.println("could not find effect: " + effectName);
-        }
+        this.activeEffects.add(effect);
+
+        plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            effect.getController().onClear(this);
+            this.activeEffects.remove(effect);
+        }, 20L * effect.getDuration()));
+
+        this.updateStats();
 
     }
 
+    public void updateStats() {
+        this.defence = this.baseDefence;
+        this.damage = this.baseDamage;
+        this.movementSpeed = this.baseMovementSpeed;
+        this.knockback = this.baseKnockback;
+        this.armorPierce = this.baseArmorPierce;
+
+        for (MetaDungeonEffect effect : this.activeEffects) {
+            effect.getController().onUpdate(this);
+        }
+
+        this.setMovementSpeed(this.movementSpeed);
+    }
 
     public void setHealth(int health) {
         this.health = health;

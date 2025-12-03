@@ -18,8 +18,7 @@ import java.util.*;
 
 import static java.lang.Math.floorDiv;
 import static java.lang.Math.round;
-import static sbs.immovablerod.metaDungeon.util.Random.getRandomCollection;
-import static sbs.immovablerod.metaDungeon.util.Random.resolveSelection;
+import static sbs.immovablerod.metaDungeon.util.Random.*;
 
 
 public class Game {
@@ -27,23 +26,26 @@ public class Game {
     private final MetaDungeon plugin = MetaDungeon.getInstance();
     private final RandomCollection<String> worldEventCategorySelection = Random.getRandomCollection((List<List<?>>) plugin.getConfig().getList("worldevent-category-weight"));
     private final RandomCollection<String> worldEventRaritySelection = Random.getRandomCollection((List<List<?>>) plugin.getConfig().getList("worldevent-rarity-weight"));
-    private final RandomCollection<String> monsterRaritySelection = Random.getRandomCollection((List<List<?>>) plugin.getConfig().getList("monster-rarity-weight"));
+
+    private final  WeightedSelection itemRarityCategorySelector = new WeightedSelection(
+            plugin.gameplay.at("/items/rarityDistribution"),
+            plugin.gameplay.at("/items/categoryDistribution")
+    );
+
+    private final  WeightedSelection monsterRarityCategorySelector = new WeightedSelection(
+            plugin.gameplay.at("/monsters/rarityDistribution")
+    );
 
     // *** run time settings ***
+    private int currentRound;
 
-    private int currentWaveSequence = 0;
-    private String currentWaveId = GConfig.waveSequence.get(0);
-    private int waveDensity;
-
-    // a weighted selection of the current entities
-    // number of entities being spawn on a current wave
-    private int entityCount;
     public void startGame(String name) {
+        GConfig.init();
+
         Location spawnLocation = new Location(plugin.world,
                 Double.parseDouble(plugin.mapsDB.get(name).get("spawnx")),
                 Double.parseDouble(plugin.mapsDB.get(name).get("spawny")),
                 Double.parseDouble(plugin.mapsDB.get(name).get("spawnz")));
-
         for (UUID key : plugin.players.keySet()) {
             // reload player stats to base state
             System.out.println(plugin.players);
@@ -71,87 +73,96 @@ public class Game {
             plugin.world.setGameRule(GameRule.DO_FIRE_TICK, false);
 
         }
-        System.out.println(GConfig.leveledLootSelection);
+
         Message.titleAll("Game Starting!", "", Colors.GREEN, Colors.GREEN);
-        Message.messageAllRepeat("Wave Starting in @time Seconds!", Colors.GREEN,  (int) GConfig.waveStartGracePeriod);
-        plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, this::startWave, 20L * GConfig.waveStartGracePeriod));
-        plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, this::genChests, 20L * GConfig.chestSpawnGracePeriod));
+        Message.messageAllRepeat("Wave Starting in @time Seconds!", Colors.GREEN,  10);
+        plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, this::startRound, 20L * 1L));
+        plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, this::genChests, 20L * 3));
         plugin.tasks.add(Bukkit.getScheduler().runTaskTimer(plugin, () -> {for(MetaDungeonPlayer p : plugin.players.values()){p.update();}}, 2L, 2L));
-        plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, this::genWorldEvent, 20L * (Random.getRandInt(GConfig.worldEventSpawnTimeMin, GConfig.worldEventSpawnTimeMax))));
+
+        plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, this::genWorldEvent, 20L * (getRandInt(GConfig.worldEventSpawnTimeMin, GConfig.worldEventSpawnTimeMax))));
 
     }
 
-    public void startWave() {
-
-        List<List<?>> waveSpawns = (List<List<?>>) plugin.getConfig().getList("waves." + currentWaveId + ".spawns");
-        int subWaves = plugin.getConfig().getInt("waves." + currentWaveId + ".sub-waves");
-        int waveDuration = plugin.getConfig().getInt("waves." + currentWaveId + ".duration");
-        waveDensity = plugin.getConfig().getInt("waves." + currentWaveId + ".density");
-        entityCount =  round((float) plugin.map.getEntityLocations().size() / waveDensity);
+    public void startRound() {
+        currentRound += 1;
 
         genEntities(1);
+
         // sub waves
-        long subWaveInterval = floorDiv(waveDuration, subWaves + 1);
-        for (int i=0;i<subWaves;i++) {
-            plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, () -> {genEntities((float) 0.25);}, 20L * subWaveInterval * (i+1)));
+        long subWaveInterval = floorDiv(GConfig.roundDuration, GConfig.roundWaves - 1);
+        for (int i=0;i < GConfig.roundWaves - 1;i++) {
+            plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                genEntities((float) GConfig.roundInterWaveScale);
+                }, 20L * subWaveInterval * (i+1)));
         }
-        plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, this::endWave, 20L * waveDuration));
+        plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, this::endRound, 20L * GConfig.roundDuration));
     }
 
-    public void endWave() {
-        Message.titleAll("Wave " + currentWaveId + " Complete!", "Prepare for Stronger Monsters", Colors.GREEN, Colors.RED);
-        currentWaveSequence += 1;
-        currentWaveId = GConfig.waveSequence.get(currentWaveSequence);
-        plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, this::startWave, 20L * GConfig.interWaveGracePeriod));
+    public void endRound() {
+        Message.titleAll("Round " + currentRound + " Complete!", "Prepare for Stronger Monsters", Colors.GREEN, Colors.RED);
 
+        plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, this::startRound, 20L * GConfig.roundGracePeriod));
     }
 
     public void genEntities(float countModifier) {
-        RandomCollection<String> monsterTierSelection = getRandomCollection((List<List<?>>) plugin.getConfig().getList("waves." + currentWaveId + ".monster-tier-weight"));
         for (MetaDungeonPlayer player : plugin.players.values()) {
             player.getPlayer().sendMessage("Monsters approach!");
         }
-        entityCount =  round(((float) plugin.map.getEntityLocations().size() / waveDensity) * countModifier);
-        System.out.println("spawning " + entityCount + " entities");
-        for (int i = 0;i < entityCount;i++) {
-            Location location = plugin.map.getEntityLocations().get(Random.getRandInt(0, plugin.map.getEntityLocations().size() - 1));
-            SpawnEntity.spawn(resolveSelection("monster",  monsterTierSelection.next(), monsterRaritySelection.next(), GConfig.monsterSelection, 10), location);
+
+        // number of entities being spawn on a current wave
+        int entityCount = Math.round(((float) plugin.map.getEntityLocations().size() / GConfig.monsterDensity) * countModifier);
+        plugin.getLogger().info("spawning '" + entityCount + "' monsters");
+
+        for (int i = 0; i < entityCount; i++) {
+            Location location = plugin.map.getEntityLocations().get(getRandInt(0, plugin.map.getEntityLocations().size() - 1));
+
+
+            String selection = GConfig.monsterSelection.fetch(monsterRarityCategorySelector.resolveRoll());
+            while (plugin.entityTemplates.path(selection).path("minLevel").asInt(1) > currentRound) {
+                System.out.println(selection);
+                selection = GConfig.monsterSelection.fetch(monsterRarityCategorySelector.resolveRoll());
+            }
+
+            SpawnEntity.spawn(selection,
+                    location,
+                    getRandInt(currentRound, currentRound * 2));
         }
     }
 
     public void genChests() {
-        List<List<?>> lootCategoryWeight = (List<List<?>>) plugin.getConfig().getList("waves." + currentWaveId + ".loot-category-weight");
-        List<List<?>> lootTierWeight = (List<List<?>>) plugin.getConfig().getList("waves." + currentWaveId + ".loot-tier-weight");
-        List<List<?>> lootRarityWeight = (List<List<?>>) plugin.getConfig().getList("item-rarity-weight");
-
-        RandomCollection<String> lootCategorySelection = getRandomCollection(lootCategoryWeight);
-        RandomCollection<String> lootTierSelection = getRandomCollection(lootTierWeight);
-        RandomCollection<String> lootRaritySelection = getRandomCollection(lootRarityWeight);
-
         int chestCount =  round((float) plugin.map.getChestLocations().size() / GConfig.chestDensity);
         plugin.getLogger().info("placing " + chestCount + " chests");
 
-
         List<Location> locations = new ArrayList<>();
+
+        RandomCollection<String> tierWeights = generateLootTier(currentRound);
+
         for (int i = 0;i < chestCount;i++) {
-            Location location = plugin.map.getChestLocations().get(Random.getRandInt(0, plugin.map.getChestLocations().size() - 1));
+            Location location = plugin.map.getChestLocations().get(getRandInt(0, plugin.map.getChestLocations().size() - 1));
             locations.add(location);
 
-            Block block =  location.getBlock();
+            Block block = location.getBlock();
 
             if (!(block.getType().equals(Material.AIR))) continue;
+
             block.setType(Material.CHEST);
             Chest chest = (Chest) block.getState();
 
-            int itemCount = Random.getRandInt(GConfig.chestItemsMin, GConfig.chestItemsMax);
+            int itemCount = getRandInt(GConfig.chestItemsMin, GConfig.chestItemsMax);
             for (int j = 1;j < itemCount+1; j++) {
 
                 try {
-                    MetaDungeonItem item = ItemUtil.createItem(resolveSelection(lootCategorySelection.next(),  lootTierSelection.next(), lootRaritySelection.next(), GConfig.leveledLootSelection, 10));
+                    List<String> itemParams = itemRarityCategorySelector.resolveRoll();
+                    itemParams.add(0, tierWeights.next());
+                    MetaDungeonItem item = ItemUtil.createItem(GConfig.itemsSelection.fetch(itemParams));
+
                     if (item == null) continue;
+
                     List<Integer> stackSize = plugin.getConfig().getIntegerList("item-stack-sizes." + item.category);
-                    item.setAmount(Random.getRandInt(stackSize.get(0), stackSize.get(1)));
-                    chest.getInventory().setItem(Random.getRandInt(1, 26), item);
+                    item.setAmount(getRandInt(stackSize.get(0), stackSize.get(1)));
+                    chest.getInventory().setItem(getRandInt(1, 26), item);
+
                 } catch (IllegalArgumentException e) {
                     System.out.println("[ERROR] failed to create item");
                     System.out.println(e);
@@ -159,17 +170,17 @@ public class Game {
             }
         }
         plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, () -> {Tasks.removeChests(locations);}, 20L * GConfig.chestLifespan));
-        plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, this::genChests, 20L * (Random.getRandInt(GConfig.chestSpawnTimeMin, GConfig.chestSpawnTimeMax)))
+        plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, this::genChests, 20L * (getRandInt(GConfig.chestSpawnTimeMin, GConfig.chestSpawnTimeMax)))
         );
     }
 
     public void genWorldEvent() {
-        RandomCollection<String> worldEventTierSelection = Random.getRandomCollection((List<List<?>>) plugin.getConfig().getList("waves." + currentWaveId + ".worldevent-tier-weight"));
+        RandomCollection<String> worldEventTierSelection = Random.getRandomCollection((List<List<?>>) plugin.getConfig().getList("waves." + "one" + ".worldevent-tier-weight"));
 
         List<String> events = GConfig.worldEventSelection.get(worldEventTierSelection.next()).get(worldEventRaritySelection.next()).get(worldEventCategorySelection.next());
-        String event = events.get(Random.getRandInt(0, events.size() - 1));
+        String event = events.get(getRandInt(0, events.size() - 1));
         WorldEvents.triggerEvent(this, event);
-        plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, this::genWorldEvent, 20L * (Random.getRandInt(GConfig.worldEventSpawnTimeMin, GConfig.worldEventSpawnTimeMax))));
+        plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, this::genWorldEvent, 20L * (getRandInt(GConfig.worldEventSpawnTimeMin, GConfig.worldEventSpawnTimeMax))));
     }
 
     public void stopGame() {
