@@ -12,27 +12,30 @@ import sbs.immovablerod.metaDungeon.MetaDungeon;
 import sbs.immovablerod.metaDungeon.classes.MetaDungeonItem;
 import sbs.immovablerod.metaDungeon.classes.MetaDungeonPlayer;
 import sbs.immovablerod.metaDungeon.util.*;
-import sbs.immovablerod.metaDungeon.util.Random;
 
 import java.util.*;
 
 import static java.lang.Math.floorDiv;
 import static java.lang.Math.round;
+import static sbs.immovablerod.metaDungeon.game.GConfig.eventManager;
+import static sbs.immovablerod.metaDungeon.game.GConfig.messageManager;
 import static sbs.immovablerod.metaDungeon.util.Random.*;
 
 
 public class Game {
     // stores access to core plugin data
     private final MetaDungeon plugin = MetaDungeon.getInstance();
-    private final RandomCollection<String> worldEventCategorySelection = Random.getRandomCollection((List<List<?>>) plugin.getConfig().getList("worldevent-category-weight"));
-    private final RandomCollection<String> worldEventRaritySelection = Random.getRandomCollection((List<List<?>>) plugin.getConfig().getList("worldevent-rarity-weight"));
-
-    private final  WeightedSelection itemRarityCategorySelector = new WeightedSelection(
+    private final WeightedSelection itemRarityCategorySelector = new WeightedSelection(
             plugin.gameplay.at("/items/rarityDistribution"),
             plugin.gameplay.at("/items/categoryDistribution")
     );
 
-    private final  WeightedSelection monsterRarityCategorySelector = new WeightedSelection(
+    private final WeightedSelection eventRarityCategory = new WeightedSelection(
+            plugin.gameplay.at("/events/rarityDistribution"),
+            plugin.gameplay.at("/events/categoryDistribution")
+    );
+
+    private final WeightedSelection monsterRarityCategorySelector = new WeightedSelection(
             plugin.gameplay.at("/monsters/rarityDistribution")
     );
 
@@ -48,10 +51,13 @@ public class Game {
                 Double.parseDouble(plugin.mapsDB.get(name).get("spawnz")));
         for (UUID key : plugin.players.keySet()) {
             // reload player stats to base state
-            System.out.println(plugin.players);
             plugin.players.put(key, new MetaDungeonPlayer(plugin.players.get(key).getPlayer()));
             System.out.println(plugin.players);
-            plugin.players.get(key).getPlayer().teleport(spawnLocation);
+            try {
+                plugin.players.get(key).getPlayer().teleport(spawnLocation);
+            } catch ( IllegalArgumentException x) {
+
+            }
             plugin.players.get(key).getPlayer().getInventory().clear();
             plugin.players.get(key).getPlayer().setGameMode(GameMode.ADVENTURE);
             plugin.players.get(key).getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, 99999, 0, true, false));
@@ -68,15 +74,15 @@ public class Game {
             plugin.world.setGameRule(GameRule.DO_WEATHER_CYCLE, false);
             plugin.world.setGameRule(GameRule.KEEP_INVENTORY, true);
             plugin.world.setGameRule(GameRule.NATURAL_REGENERATION, false);
-
             plugin.world.setGameRule(GameRule.MOB_GRIEFING, false);
             plugin.world.setGameRule(GameRule.DO_FIRE_TICK, false);
 
-        }
+            GConfig.messageManager.addPlayer(plugin.players.get(key).getPlayer());
 
-        Message.titleAll("Game Starting!", "", Colors.GREEN, Colors.GREEN);
-        Message.messageAllRepeat("Wave Starting in @time Seconds!", Colors.GREEN,  10);
-        plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, this::startRound, 20L * 1L));
+        }
+        GConfig.messageManager.titleAll("Game Starting!", "", Colors.GREEN, Colors.GREEN);
+        GConfig.messageManager.messageAllRepeat("Wave Starting in @time Seconds!", Colors.GREEN,  10);
+        plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, this::startRound, 20L * 10L));
         plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, this::genChests, 20L * 3));
         plugin.tasks.add(Bukkit.getScheduler().runTaskTimer(plugin, () -> {for(MetaDungeonPlayer p : plugin.players.values()){p.update();}}, 2L, 2L));
 
@@ -100,7 +106,7 @@ public class Game {
     }
 
     public void endRound() {
-        Message.titleAll("Round " + currentRound + " Complete!", "Prepare for Stronger Monsters", Colors.GREEN, Colors.RED);
+        GConfig.messageManager.titleAll("Round " + currentRound + " Complete!", "Prepare for Stronger Monsters", Colors.GREEN, Colors.RED);
 
         plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, this::startRound, 20L * GConfig.roundGracePeriod));
     }
@@ -111,7 +117,8 @@ public class Game {
         }
 
         // number of entities being spawn on a current wave
-        int entityCount = Math.round(((float) plugin.map.getEntityLocations().size() / GConfig.monsterDensity) * countModifier);
+        int entityCount = Math.toIntExact(round(((float) plugin.map.getEntityLocations().size() / GConfig.monsterDensity) * countModifier *
+                (1.0 + GConfig.multiplayerScalingMonsterCount * (float) (plugin.players.size() - 1.0))));
         plugin.getLogger().info("spawning '" + entityCount + "' monsters");
 
         for (int i = 0; i < entityCount; i++) {
@@ -124,14 +131,16 @@ public class Game {
                 selection = GConfig.monsterSelection.fetch(monsterRarityCategorySelector.resolveRoll());
             }
 
-            SpawnEntity.spawn(selection,
-                    location,
-                    getRandInt(currentRound, currentRound * 2));
+            GConfig.entityManager.add(selection, location, getRandInt(currentRound, currentRound * 3));
+
         }
     }
 
     public void genChests() {
-        int chestCount =  round((float) plugin.map.getChestLocations().size() / GConfig.chestDensity);
+        System.out.println(plugin.players.size());
+        int chestCount = Math.toIntExact(round(((float) plugin.map.getChestLocations().size() / GConfig.chestDensity) *
+                (1.0 + GConfig.multiplayerScalingChestCount * ((float) plugin.players.size() - 1.0))));
+
         plugin.getLogger().info("placing " + chestCount + " chests");
 
         List<Location> locations = new ArrayList<>();
@@ -159,8 +168,9 @@ public class Game {
 
                     if (item == null) continue;
 
-                    List<Integer> stackSize = plugin.getConfig().getIntegerList("item-stack-sizes." + item.category);
-                    item.setAmount(getRandInt(stackSize.get(0), stackSize.get(1)));
+                    item.setAmount(getRandInt(item.getTemplate().path("minStackSize").asInt(1),
+                                         item.getTemplate().path("maxStackSize").asInt(1)));
+
                     chest.getInventory().setItem(getRandInt(1, 26), item);
 
                 } catch (IllegalArgumentException e) {
@@ -175,12 +185,23 @@ public class Game {
     }
 
     public void genWorldEvent() {
-        RandomCollection<String> worldEventTierSelection = Random.getRandomCollection((List<List<?>>) plugin.getConfig().getList("waves." + "one" + ".worldevent-tier-weight"));
 
-        List<String> events = GConfig.worldEventSelection.get(worldEventTierSelection.next()).get(worldEventRaritySelection.next()).get(worldEventCategorySelection.next());
-        String event = events.get(getRandInt(0, events.size() - 1));
-        WorldEvents.triggerEvent(this, event);
+        String event = GConfig.eventSelection.fetch(eventRarityCategory.resolveRoll());
+        System.out.println(event);
+        eventManager.add(event, currentRound);
         plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, this::genWorldEvent, 20L * (getRandInt(GConfig.worldEventSpawnTimeMin, GConfig.worldEventSpawnTimeMax))));
+    }
+    public void onPlayerDeath() {
+        List<Boolean> dead = new ArrayList<>();
+        this.plugin.players.values().forEach(player -> {
+            dead.add(player.isDead());
+        });
+        System.out.println("PLAYER DIED");
+        System.out.println(dead);
+        if (!dead.contains(false)) {
+            messageManager.titleAll("Game Over!", "All Players Defeated", Colors.DARK_RED, Colors.RED);
+            plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, this::stopGame, 20L * 5));
+        }
     }
 
     public void stopGame() {
@@ -199,13 +220,17 @@ public class Game {
                 block.setType(Material.AIR);
             } catch (NullPointerException ignored) {}
         }
-        for (UUID entity : plugin.entities.keySet()) {
-            plugin.entities.get(entity).getEntity().remove();
+        for (UUID entity : GConfig.entityManager.getAllIDs()) {
+            GConfig.entityManager.getFromID(entity).getEntity().remove();
         }
         for (MetaDungeonPlayer player : plugin.players.values()) {
             player.setInGame(false);
         }
-        plugin.entities.clear();
+        GConfig.entityManager.clear();
+        GConfig.messageManager.clear();
+        GConfig.eventManager.clear();
         plugin.items.clear();
+        plugin.world.setStorm(false);
+        plugin.world.setClearWeatherDuration(1000000);
     }
 }

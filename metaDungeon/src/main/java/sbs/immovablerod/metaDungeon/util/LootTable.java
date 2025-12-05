@@ -16,12 +16,10 @@ public class LootTable {
     private final MetaDungeon plugin = MetaDungeon.getInstance();
     private final JsonNode data;
     private final HashMap<String, List<String>> selections;
-    private final NestedMap mappings;
     private final HashMap<Integer, List<String>> hashMappings;
     public LootTable(JsonNode data) {
         this.data = data;
         this.selections = new HashMap<>();
-        this.mappings = new NestedMap<String, String>();
         this.hashMappings = new HashMap<>();
     }
 
@@ -40,20 +38,22 @@ public class LootTable {
         Iterator<JsonNode> values = this.data.elements();
 
         while (values.hasNext()) {
+
             JsonNode value = values.next();
+            if (value.path("naturalSpawning").asBoolean(true)) {
+                List<String> unhashed = new ArrayList<>();
+                for (String key : keys) {
+                    unhashed.add(value.path(key).asText());
+                }
 
-            List<String> unhashed = new ArrayList<>();
-            for (String key : keys) {
-                unhashed.add(value.path(key).asText());
+                int hash = computeHash(unhashed);
+
+                if (!this.hashMappings.containsKey(hash)) {
+                    this.hashMappings.put(hash, new ArrayList<>());
+
+                }
+                this.hashMappings.get(hash).add(value.path("internalName").asText());
             }
-
-            int hash = computeHash(unhashed);
-
-            if (!this.hashMappings.containsKey(hash)) {
-                this.hashMappings.put(hash, new ArrayList<>());
-
-            }
-            this.hashMappings.get(hash).add(value.path("internalName").asText());
         }
 
         plugin.getLogger().info("generated hashmap= " +  this.hashMappings.toString());

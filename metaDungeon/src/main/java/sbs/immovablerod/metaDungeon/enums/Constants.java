@@ -9,7 +9,6 @@ public enum Constants {
     final private int value;
 
     Constants(int value) {
-
         this.value = value;
     }
     public int value() {

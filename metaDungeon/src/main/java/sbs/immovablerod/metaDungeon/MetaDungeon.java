@@ -1,4 +1,5 @@
 package sbs.immovablerod.metaDungeon;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.tr7zw.nbtapi.iface.ReadWriteNBT;
@@ -27,21 +28,20 @@ import java.util.logging.Level;
 
 public final class MetaDungeon extends JavaPlugin implements Listener {
     public HashMap<UUID, MetaDungeonPlayer>     players = new HashMap<>();
-    public HashMap<UUID, MetaDungeonMonster> entities = new HashMap<>();
     public HashMap<UUID, MetaDungeonProjectile> projectiles = new HashMap<>();
 
     public List<BukkitTask> tasks = new ArrayList<>();
-    public World world;
+    public World world = Bukkit.getWorld("world");
     public Game game = null;
     public DungeonMap map = null;
 
     public final HashMap<String, HashMap<String, String>> mapsDB = LoadSqlTable.loadTable("maps", "name");
-    public final HashMap<String, HashMap<String, String>> worldEventsDB = LoadSqlTable.loadTable("world_events", "name");
 
     public HashMap<UUID, MetaDungeonItem> items = new HashMap<>();
     public final ObjectMapper objectMapper = new ObjectMapper();
     public final JsonNode itemsV2 = objectMapper.readTree(new File("plugins" + File.separator + "metaDungeon" + File.separator + "items.json"));
     public final JsonNode entityTemplates = objectMapper.readTree(new File("plugins" + File.separator + "metaDungeon" + File.separator + "monsters.json"));
+    public final JsonNode eventTemplates = objectMapper.readTree(new File("plugins" + File.separator + "metaDungeon" + File.separator + "events.json"));
     public final JsonNode gameplay = objectMapper.readTree(new File("plugins" + File.separator + "metaDungeon" + File.separator + "gameplay.json"));
 
     public HashMap<String, ReadWriteNBT> baseItemNbts  = RenderItemsV2.renderBaseItemNbt(itemsV2);
@@ -61,7 +61,6 @@ public final class MetaDungeon extends JavaPlugin implements Listener {
         this.getLogger().setLevel(Level.ALL);
         getDataFolder().mkdirs();
         MetaDungeon.instance = this;
-        world = Bukkit.getWorld("world");
 
         getServer().getPluginManager().registerEvents(new ServerListener(), this);
 

@@ -10,8 +10,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import sbs.immovablerod.metaDungeon.MetaDungeon;
+import sbs.immovablerod.metaDungeon.enums.Colors;
 import sbs.immovablerod.metaDungeon.enums.Constants;
 import sbs.immovablerod.metaDungeon.enums.Symbols;
+import sbs.immovablerod.metaDungeon.game.GConfig;
 import sbs.immovablerod.metaDungeon.util.ItemUtil;
 
 import java.util.HashMap;
@@ -112,7 +114,8 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
     public void resetInvincibility() {this.invincibilityFrames = this.maxInvincibilityFrames;}
     public boolean isDead() {return this.dead;}
 
-    public boolean canAttack() {return this.attackCoolDown <= 0 &&
+    public boolean canAttack() {
+        return this.attackCoolDown <= 0 &&
             this.gear.get("mainHand") != null
             && this.gear.get("mainHand").getAttackSpeed() >= 1
             && this.gear.get("mainHand").getStaminaCost() <= this.stamina;
@@ -142,7 +145,9 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
 
 
     public Integer getLives() {return this.lives;}
-
+    public void setLives(int value) {
+        this.lives = value;
+    }
     public HashMap<String, MetaDungeonItem> getGear() {return this.gear;}
 
     public void setStamina(Double amount) {
@@ -174,8 +179,6 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
         }
         this.displayActionBar();
     }
-
-
 
     @Override
     public void setMovementSpeed(float value) {
@@ -294,16 +297,18 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
     }
 
     public void kill() {
+        GConfig.messageManager.messageAll(this.player.getDisplayName() + " was slain...", Colors.DARK_RED);
+
         this.dead = true;
         this.player.setGameMode(GameMode.SPECTATOR);
         this.player.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, 99999, 0, true, false));
 
+        plugin.game.onPlayerDeath();
     }
 
     @Override
     public void receiveAttack(MetaDungeonEntity attacker) {
         super.receiveAttack(attacker);
-        System.out.println("attack received");
         this.invincibilityFrames = this.maxInvincibilityFrames;
 
         for (String key: this.gear.keySet()) {
@@ -313,8 +318,6 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
                 if (key.equals("chestplate")) item.changeDurability(1, this.getPlayer().getInventory().getChestplate(), this);
                 if (key.equals("leggings")) item.changeDurability(1, this.getPlayer().getInventory().getLeggings(), this);
                 if (key.equals("boots")) item.changeDurability(1, this.getPlayer().getInventory().getBoots(), this);
-
-
             }
         }
     }

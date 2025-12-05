@@ -1,5 +1,6 @@
 package sbs.immovablerod.metaDungeon.commands;
 
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -15,6 +16,8 @@ public class StartGame implements CommandExecutor {
 
         if (plugin.game != null)  plugin.game.stopGame();
         if (args.length != 1) return false;
+
+        this.plugin.world = Bukkit.getWorld("world");
 
         plugin.game = new Game();
         if (plugin.map == null) {

@@ -40,11 +40,15 @@ public class MetaDungeonMonster extends MetaDungeonEntity {
         this.effects = new ArrayList<>();
 
         setMovementSpeed(this.movementSpeed);
-
         NBT.modify(this.entity, nbt -> {
             nbt.setBoolean("PersistenceRequired", true);
-            nbt.setBoolean("IsBaby", false);
+            nbt.setBoolean("IsBaby", template.at("/nbt/isBaby").asBoolean(false));
             nbt.setBoolean("CustomNameVisible", true);
+            nbt.setBoolean("NoAI", template.at("/nbt/noAI").asBoolean(false));
+
+            if (template.at("/nbt/powered").asBoolean(false)) {
+                nbt.setBoolean("powered", true);
+            }
 
             ReadWriteNBTCompoundList modifierCompound = nbt.getCompoundList("attributes");
             ReadWriteNBT movementCompound = modifierCompound.addCompound();

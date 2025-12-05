@@ -19,7 +19,12 @@ public class ApplyEffect implements CommandExecutor {
         }
         Entity target = (Entity) sender;
 
-        plugin.players.get(target.getUniqueId()).addEffect(new MetaDungeonEffect(Effects.GUARDED, 10, 10));
+        Effects effect = Effects.valueOf(args[0].toString());
+        int duration = Integer.parseInt(args[1]);
+        int level = Integer.parseInt(args[2]);
+
+
+        plugin.players.get(target.getUniqueId()).addEffect(new MetaDungeonEffect(effect, duration, level));
 
         return true;
     }

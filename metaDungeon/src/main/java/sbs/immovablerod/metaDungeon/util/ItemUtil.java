@@ -22,7 +22,7 @@ public class ItemUtil {
 
     public static UUID getItemId(ItemStack item) {
         UUID targetId;
-        if (item.getType() != Material.AIR) {
+        if (item != null && item.getType() != Material.AIR) {
             try {
                 targetId = NBT.getComponents(item, nbt -> (UUID) nbt.getCompound("minecraft:custom_data").getUUID("id"));
             } catch (NullPointerException ignored) {
@@ -37,8 +37,6 @@ public class ItemUtil {
     }
     public static MetaDungeonItem createItem(String itemName) {
         if (itemName == null) return null;
-
-        String type = plugin.itemsV2.path(itemName).path("displayType").asText("BARRIER");
 
         UUID id = UUID.randomUUID();
 

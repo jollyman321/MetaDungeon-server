@@ -55,15 +55,20 @@ public class MetaDungeonEntity {
     }
 
     public void addEffect(MetaDungeonEffect effect) {
+        if (!this.activeEffects.contains(effect)) {
+            this.activeEffects.add(effect);
+            effect.apply(this);
 
-        this.activeEffects.add(effect);
+            // this code should be handled by MetaDungeonEffect
+            if (effect.getDuration() > 0) {
+                plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                    effect.deactivate();
+                    this.activeEffects.remove(effect);
+                }, 20L * effect.getDuration()));
+            }
 
-        plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            effect.getController().onClear(this);
-            this.activeEffects.remove(effect);
-        }, 20L * effect.getDuration()));
-
-        this.updateStats();
+            this.updateStats();
+        }
 
     }
 
@@ -75,9 +80,10 @@ public class MetaDungeonEntity {
         this.armorPierce = this.baseArmorPierce;
 
         for (MetaDungeonEffect effect : this.activeEffects) {
-            effect.getController().onUpdate(this);
+            if (effect.isActive()) {
+                effect.getController().onUpdate(this);
+            }
         }
-
         this.setMovementSpeed(this.movementSpeed);
     }
 
@@ -99,5 +105,7 @@ public class MetaDungeonEntity {
     public float getMovementSpeed() {
         return this.movementSpeed;
     }
-    public int getKnockback() {return knockback;}
+    public int getKnockback() {
+        return this.knockback;
+    }
 }

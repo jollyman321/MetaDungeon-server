@@ -4,14 +4,18 @@ import com.fasterxml.jackson.databind.JsonNode;
 import de.tr7zw.nbtapi.NBT;
 import de.tr7zw.nbtapi.iface.ReadWriteNBT;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import sbs.immovablerod.metaDungeon.elements.ItemInterface;
 import sbs.immovablerod.metaDungeon.enums.Items;
+import sbs.immovablerod.metaDungeon.util.ItemUtil;
 
+import java.util.Objects;
 import java.util.UUID;
 
 import static java.lang.Math.round;
+import static sbs.immovablerod.metaDungeon.game.GConfig.soundManager;
 
 public class MetaDungeonItem extends ItemStack {
     public final String name;
@@ -42,7 +46,7 @@ public class MetaDungeonItem extends ItemStack {
                          ReadWriteNBT baseNbt,
                          JsonNode template
     ) {
-        super(Material.getMaterial( template.path("displayType").asText("BARRIER").toUpperCase()));
+        super(Objects.requireNonNull(Material.getMaterial(template.path("displayType").asText("BARRIER").toUpperCase())));
 
         //this.item = item;
         this.name = name;
@@ -84,6 +88,7 @@ public class MetaDungeonItem extends ItemStack {
         player.changeMaxHealth(this.template.at("/onConsume/changeMaxHealth").asInt(0));
         player.changeHealth(this.template.at("/onConsume/changeHealth").asInt(0));
         player.changeStamina(this.template.at("/onConsume/changeStamina").asDouble(0));
+        player.setLives(player.getLives() + this.template.at("/onConsume/changeLives").asInt(0));
 
         if (player.getPlayer().getInventory().getItemInMainHand().getAmount() > 1) {
             player.getPlayer().getInventory().getItemInMainHand().setAmount(player.getPlayer().getInventory().getItemInMainHand().getAmount() - 1);
@@ -113,20 +118,46 @@ public class MetaDungeonItem extends ItemStack {
                         ("@2", String.valueOf(this.durability))
                 );
             });
-            if (this.durability < 1) {
-                for (int i = 0; i < player.getPlayer().getInventory().getSize(); i++) {
-                    if (player.getPlayer().getInventory().getItem(i).getDurability() < 1)
-                        player.getPlayer().getInventory().getItem(i).setType(Material.AIR);
+            if (this.currentDurability < 1) {
+                // armor requires extra handling coed
+                System.out.println("item broken");
+                int i = 0;
+                for (ItemStack item: player.getPlayer().getInventory().getArmorContents()) {
+
+                    if (Objects.equals(ItemUtil.getItemId(item), this.getId())) {
+                        switch (i) {
+                            case 0:
+                                player.getPlayer().getInventory().setBoots(null);
+                            case 1:
+                                player.getPlayer().getInventory().setLeggings(null);
+                            case 2:
+                                player.getPlayer().getInventory().setChestplate(null);
+                            case 3:
+                                player.getPlayer().getInventory().setHelmet(null);
+
+                        }
+                        player.updateInventory();
+                        soundManager.play(player.getPlayer().getLocation(), Sound.ITEM_SHIELD_BREAK);
+                        break;
+                    }
+                    i++;
                 }
+
             }
         }
     }
 
+    public JsonNode getTemplate() {
+        return template;
+    }
 
     public UUID getId() {return this.id;}
     public Integer getAttackSpeed() {return this.attack_speed;}
     public Integer getStaminaCost() {return this.staminaCost;}
-    public Integer getKnockback() {return this.knockback;}
+    public Integer getKnockback() {
+        System.out.println("KB " + this.knockback);
+        return this.knockback;
+    }
     public Integer getDamage() {return this.damage;}
     public Integer getArmorPierce() {return this.armorPierce;}
     public Integer getDamagePercent() {return this.damagePercent;}

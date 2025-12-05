@@ -3,8 +3,6 @@ package sbs.immovablerod.metaDungeon.enums;
 import sbs.immovablerod.metaDungeon.classes.MetaDungeonItem;
 import sbs.immovablerod.metaDungeon.elements.ItemInterface;
 import sbs.immovablerod.metaDungeon.elements.items.Dummy;
-import sbs.immovablerod.metaDungeon.elements.items.SmallHealthCrystal;
-import sbs.immovablerod.metaDungeon.elements.items.SmallStaminaCrystal;
 
 import java.util.Objects;
 

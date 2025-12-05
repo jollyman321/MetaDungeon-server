@@ -1,6 +1,10 @@
 package sbs.immovablerod.metaDungeon.game;
 
 import sbs.immovablerod.metaDungeon.MetaDungeon;
+import sbs.immovablerod.metaDungeon.managers.EntityManager;
+import sbs.immovablerod.metaDungeon.managers.EventManager;
+import sbs.immovablerod.metaDungeon.managers.MessageManager;
+import sbs.immovablerod.metaDungeon.managers.SoundManager;
 import sbs.immovablerod.metaDungeon.util.LoadSqlTable;
 import sbs.immovablerod.metaDungeon.util.LootTable;
 
@@ -21,23 +25,30 @@ public class GConfig {
 
 
     public static final int chestDensity = plugin.gameplay.at("/chests/density").asInt(1500);
-    public static final long chestLifespan = plugin.getConfig().getLong("chest-lifespan");
-    public static final int chestItemsMin = plugin.getConfig().getInt("chest-items-min");
-    public static final int chestItemsMax = plugin.getConfig().getInt("chest-items-max");
-    public static final int chestSpawnTimeMin = plugin.getConfig().getInt("chest-spawn-time-min");
-    public static final int chestSpawnTimeMax = plugin.getConfig().getInt("chest-spawn-time-max");
-    public static final int worldEventSpawnTimeMin = plugin.getConfig().getInt("worldevent-spawn-time-min");
-    public static final int worldEventSpawnTimeMax = plugin.getConfig().getInt("worldevent-spawn-time-max");
+    public static final long chestLifespan = plugin.gameplay.at("/chests/lifeSpan").asInt(180);
+    public static final int chestItemsMin = plugin.gameplay.at("/chests/itemCountMin").asInt(1);
+    public static final int chestItemsMax = plugin.gameplay.at("/chests/itemCountMax").asInt(5);
+    public static final int chestSpawnTimeMin = plugin.gameplay.at("/chests/spawnTimeMin").asInt(120);
+    public static final int chestSpawnTimeMax = plugin.gameplay.at("/chests/spawnTimeMax").asInt(180);
+    public static final int worldEventSpawnTimeMin = plugin.gameplay.at("/events/spawnTimeMax").asInt(60);
+    public static final int worldEventSpawnTimeMax = plugin.gameplay.at("/events/spawnTimeMax").asInt(180);
 
-    public static final HashMap<String, HashMap<String, HashMap<String, List<String>>>>
-            worldEventSelection = LoadSqlTable.tableToNestedHashMap(plugin.worldEventsDB, "tier", "rarity", "category");
+    public static final double multiplayerScalingMonsterCount = plugin.gameplay.at("/multiplayerScaling/monsterCount").asDouble(0.2);
+    public static final double multiplayerScalingChestCount = plugin.gameplay.at("/multiplayerScaling/monsterCount").asDouble(0.2);
 
+    public static final LootTable eventSelection = new LootTable(plugin.eventTemplates);
     public static final LootTable itemsSelection = new LootTable(plugin.itemsV2);
     public static final LootTable monsterSelection = new LootTable(plugin.entityTemplates);
+
+    public static final EventManager eventManager = new EventManager();
+    public static final EntityManager entityManager = new EntityManager();
+    public static final MessageManager messageManager = new MessageManager();
+    public static final SoundManager soundManager = new SoundManager();
 
     public static void init() {
         itemsSelection.generateMappings("tier", "rarity", "category");
         monsterSelection.generateMappings("rarity");
+        eventSelection.generateMappings("rarity", "category");
     }
 
 }

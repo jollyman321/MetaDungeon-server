@@ -4,14 +4,14 @@ import sbs.immovablerod.metaDungeon.classes.MetaDungeonEffect;
 import sbs.immovablerod.metaDungeon.classes.MetaDungeonEntity;
 import sbs.immovablerod.metaDungeon.elements.EffectInterface;
 
-public class Speed extends EffectInterface {
+public class Strength extends EffectInterface {
     private final MetaDungeonEffect root;
-    public Speed(MetaDungeonEffect root) {
+    public Strength(MetaDungeonEffect root) {
         this.root = root;
     }
 
     @Override
     public void onUpdate(MetaDungeonEntity entity) {
-        entity.movementSpeed += this.root.getLevel();
+        entity.damage += this.root.getLevel();
     }
 }

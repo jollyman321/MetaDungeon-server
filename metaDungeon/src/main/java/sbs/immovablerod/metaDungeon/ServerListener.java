@@ -13,6 +13,7 @@ import sbs.immovablerod.metaDungeon.classes.MetaDungeonItem;
 import sbs.immovablerod.metaDungeon.classes.MetaDungeonMonster;
 import sbs.immovablerod.metaDungeon.classes.MetaDungeonPlayer;
 import sbs.immovablerod.metaDungeon.classes.MetaDungeonProjectile;
+import sbs.immovablerod.metaDungeon.game.GConfig;
 
 import static sbs.immovablerod.metaDungeon.util.ItemUtil.getAdvancedItem;
 
@@ -33,48 +34,52 @@ public class ServerListener implements Listener {
         }
     }
 
-    @EventHandler
+    @EventHandler(priority=EventPriority.HIGH)
     public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
+
         if (event.getEntity() instanceof Player) {
-            System.out.println("attack reg");
+            // handles damage dealt to player
             Player player = (Player) event.getEntity();
             MetaDungeonPlayer playerConfig = plugin.players.get(player.getUniqueId());
             if (playerConfig.isInvincible()) event.setCancelled(true);
-            else {
 
-                MetaDungeonMonster attacker = plugin.entities.get(event.getDamager().getUniqueId());
+            else {
+                MetaDungeonMonster attacker = GConfig.entityManager.getFromID(event.getDamager().getUniqueId());
                 event.setDamage(0);
-                System.out.println("attack landed");
                 try {
                     playerConfig.receiveAttack(attacker);
+                    player.updateInventory();
+                    playerConfig.updateInventory();
                 } catch (NullPointerException e) {
                     System.out.println("[WARN] could not find entity profile for " + event.getDamager().getUniqueId());
+                    System.out.println(e);
                 }
             }
 
         } else if (event.getDamager() instanceof Player) {
+            // handles players inflicting damage
             Player player = (Player) event.getDamager();
             MetaDungeonPlayer playerConfig = plugin.players.get(player.getUniqueId());
+
             event.setDamage(0);
+
             if (!playerConfig.canAttack()) {
                 event.setCancelled(true);}
-
             else {
-
-                MetaDungeonMonster target = plugin.entities.get(event.getEntity().getUniqueId());
-
+                MetaDungeonMonster target = GConfig.entityManager.getFromID(event.getEntity().getUniqueId());
                 int damage = playerConfig.getDamage();
-
+                System.out.println("attack landed " + damage);
                 playerConfig.onTargetHit();
 
                 if (damage < 1) event.setCancelled(true);
                 try {
                     target.getEntity().setVelocity(playerConfig.getPlayer().getLocation().getDirection().setY(0).normalize().multiply(
-                            (float) playerConfig.getKnockback()/30)
+                            ((float) playerConfig.getKnockback())/30)
                     );
                     target.receiveAttack(playerConfig);
                 } catch (NullPointerException e) {
                     System.out.println("[WARN] could not find entity profile for " + event.getEntity().getUniqueId());
+                    System.out.println(e);
                 }
             }
         }
@@ -97,7 +102,7 @@ public class ServerListener implements Listener {
     public void onProjectileHit(ProjectileHitEvent event) {
         if (event.getHitEntity() instanceof Player) {
             Entity entity = (Entity) event.getEntity().getShooter();
-            MetaDungeonMonster shooter = plugin.entities.get(entity.getUniqueId());
+            MetaDungeonMonster shooter = GConfig.entityManager.getFromID(entity.getUniqueId());
             if (shooter != null) {
                 Player player = (Player) event.getHitEntity();
                 MetaDungeonPlayer target = plugin.players.get(player.getUniqueId());
@@ -111,7 +116,7 @@ public class ServerListener implements Listener {
             System.out.println("testxx");
             if (plugin.projectiles.containsKey(event.getEntity().getUniqueId())) {
                 System.out.println("testyy");
-                MetaDungeonMonster monster = plugin.entities.get(event.getHitEntity().getUniqueId());
+                MetaDungeonMonster monster = GConfig.entityManager.getFromID(event.getHitEntity().getUniqueId());
                 monster.setHealth(monster.getHealth() - plugin.projectiles.get(event.getEntity().getUniqueId()).getDamage());
             }
 
