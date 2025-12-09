@@ -20,9 +20,6 @@ public class StartGame implements CommandExecutor {
         this.plugin.world = Bukkit.getWorld("world");
 
         plugin.game = new Game();
-        if (plugin.map == null) {
-            plugin.map = new DungeonMap(args[0]);
-        }
         plugin.game.startGame(args[0]);
         return true;
     }

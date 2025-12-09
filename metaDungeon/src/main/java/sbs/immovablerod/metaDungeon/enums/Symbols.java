@@ -1,42 +1,43 @@
 package sbs.immovablerod.metaDungeon.enums;
 
+import net.kyori.adventure.text.format.NamedTextColor;
+
 public enum Symbols {
     HEART("❤") {
         @Override
-        public Colors color() {
-            return Colors.RED;}
+        public NamedTextColor color() {return NamedTextColor.RED;}
     },
     LIFE("✝"){
         @Override
-        public Colors color() {return Colors.DARK_AQUA;}
+        public NamedTextColor color() {return NamedTextColor.DARK_AQUA;}
     },
     DEFENCE("✠"){
         @Override
-        public Colors color() {return Colors.BLUE;}
+        public NamedTextColor color() {return NamedTextColor.BLUE;}
     },
     DAMAGE("❉"){
         @Override
-        public Colors color() {return Colors.RED;}
+        public NamedTextColor color() {return NamedTextColor.RED;}
     },
     STAMINA("❖"){
         @Override
-        public Colors color() {return Colors.YELLOW;}
+        public NamedTextColor color() {return NamedTextColor.YELLOW;}
     },
     HEAL_STAMINA("+"){
         @Override
-        public Colors color() {return Colors.GREEN;}
+        public NamedTextColor color() {return NamedTextColor.GREEN;}
     },
     HEAL_LIFE("+"){
         @Override
-        public Colors color() {return Colors.GREEN;}
+        public NamedTextColor color() {return NamedTextColor.GREEN;}
     },
     STUNNED("✨"){
         @Override
-        public Colors color() {return Colors.YELLOW;}
+        public NamedTextColor color() {return NamedTextColor.YELLOW;}
     };
 
     final private String value;
-    public abstract Colors color();
+    public abstract NamedTextColor color();
 
     Symbols(String value) {
         this.value = value;

@@ -32,10 +32,10 @@ public class Random {
             choices.add(Math.cos(((double) (currentRound) / 4.0)), "1");
         }
         if (currentRound<= 10) {
-            choices.add(Math.sin(((double) (currentRound) / 12))/2 , "2");
+            choices.add(Math.sin(((double) (currentRound) / 12)) , "2");
         }
         if (5 <= currentRound && currentRound <= 10) {
-            choices.add(Math.sin(((double) (currentRound) / 12.0) - Math.PI / 2.0) + 1, "2");
+            choices.add(Math.sin(((double) (currentRound) / 12.0) - Math.PI / 2.0) + 1, "3");
         }
 
         System.out.println("loot weights for " + currentRound);

@@ -2,7 +2,7 @@ package sbs.immovablerod.metaDungeon.elements.events;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.event.weather.WeatherEvent;
+import org.bukkit.Particle;
 import sbs.immovablerod.metaDungeon.classes.MetaDungeonEffect;
 import sbs.immovablerod.metaDungeon.classes.MetaDungeonEvent;
 import sbs.immovablerod.metaDungeon.classes.MetaDungeonMonster;
@@ -34,7 +34,7 @@ public class MonsterCore extends EventInterface {
     public void onInitiated() {
         super.onInitiated();
 
-        Location location = GConfig.entityManager.getRandomLocation();
+        Location location = GConfig.mapManager.getEntityLocation();
         this.entity = GConfig.entityManager.add("mobTotem", location, this.root.getLevel());
 
         GConfig.messageManager.messageAll(
@@ -50,10 +50,7 @@ public class MonsterCore extends EventInterface {
 
     private void update() {
         if (!this.entity.getEntity().isDead()) {
-            for (MetaDungeonMonster monster : GConfig.entityManager.getAll()) {
-                monster.addEffect(this.effect);
-            }
-            Bukkit.getScheduler().runTaskLater(plugin, this::update, 20L * 4);
+
         } else {
             this.root.end();
         }

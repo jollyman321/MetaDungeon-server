@@ -11,7 +11,14 @@ public class Strength extends EffectInterface {
     }
 
     @Override
-    public void onUpdate(MetaDungeonEntity entity) {
-        entity.damage += this.root.getLevel();
+    public void onInitiated(MetaDungeonEntity entity) {
+        super.onInitiated(entity);
+        entity.changeDamage(this.root.getLevel());
+    }
+
+    @Override
+    public void onClear(MetaDungeonEntity entity) {
+        super.onClear(entity);
+        entity.changeDamage(-this.root.getLevel());
     }
 }

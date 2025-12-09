@@ -6,10 +6,9 @@ import de.tr7zw.nbtapi.iface.ReadWriteNBT;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import sbs.immovablerod.metaDungeon.elements.ItemInterface;
 import sbs.immovablerod.metaDungeon.enums.Items;
-import sbs.immovablerod.metaDungeon.util.ItemUtil;
+import sbs.immovablerod.metaDungeon.game.GConfig;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -35,8 +34,9 @@ public class MetaDungeonItem extends ItemStack {
     private final Integer staminaCost;
     private final Integer knockback;
     private final Integer damagePercent;
-    private final ItemInterface itemInterface;
     private final Integer armorPierce;
+    private final Double range;
+    private final ItemInterface controller;
     public Integer durability;
     public Integer currentDurability;
 
@@ -46,7 +46,10 @@ public class MetaDungeonItem extends ItemStack {
                          ReadWriteNBT baseNbt,
                          JsonNode template
     ) {
-        super(Objects.requireNonNull(Material.getMaterial(template.path("displayType").asText("BARRIER").toUpperCase())));
+        super(Objects.requireNonNull(
+                Material.getMaterial(template.path("displayType").asText("BARRIER").toUpperCase()
+                )
+        ));
 
         //this.item = item;
         this.name = name;
@@ -61,6 +64,7 @@ public class MetaDungeonItem extends ItemStack {
         this.health = template.at("/health").asInt();
         this.stamina = template.at("/stamina").asInt();
         this.durability =template.at("/durability").asInt();
+        this.range =template.at("/range").asDouble();
 
         this.attack_speed = template.at("/attackSpeed").asInt();
         this.armorPierce = template.at("/armorPierce").asInt();
@@ -80,8 +84,8 @@ public class MetaDungeonItem extends ItemStack {
         });
         
         // implement custom item functions
-        this.itemInterface = Items.get(this.name, this);
-
+        this.controller = Items.get(template.path("controller").asText(), this);
+        this.controller.onCreated();
     }
     public void consume(MetaDungeonPlayer player) {
 
@@ -102,39 +106,39 @@ public class MetaDungeonItem extends ItemStack {
 
     public void onTargetHit(MetaDungeonPlayer player) {
         player.changeStamina((double) - this.staminaCost);
-
     }
 
-    public void changeDurability(int amount, ItemStack craftItemStack, MetaDungeonPlayer player) {
+    public void changeDurability(int amount, ItemStack item, MetaDungeonPlayer player) {
 
         if (this.durability > -1) {
             this.currentDurability -= amount;
-            player.updateInventory();
-            craftItemStack.setDurability((short) ((this.durability - this.currentDurability) * 2));
-            NBT.modifyComponents(craftItemStack, nbt -> {
+            NBT.modifyComponents(item, nbt -> {
                 int location = nbt.getOrCreateCompound("minecraft:custom_data").getInteger("durability_line");
                 nbt.getCompoundList("minecraft:lore").get(location).setString("text", "Durability: @1/@2".replace
                         ("@1", String.valueOf(this.currentDurability)).replace
                         ("@2", String.valueOf(this.durability))
                 );
             });
+
+            //Damageable meta = (Damageable) item.getItemMeta();
+            //meta.setDamage(10);
+            //meta.setMaxDamage(100);
+            //item.setItemMeta(meta);
+            item.setDurability((short) ((this.durability - this.currentDurability) * 2));
+
             if (this.currentDurability < 1) {
-                // armor requires extra handling coed
-                System.out.println("item broken");
+                // armor requires extra handling code
                 int i = 0;
-                for (ItemStack item: player.getPlayer().getInventory().getArmorContents()) {
-
-                    if (Objects.equals(ItemUtil.getItemId(item), this.getId())) {
-                        switch (i) {
-                            case 0:
-                                player.getPlayer().getInventory().setBoots(null);
-                            case 1:
-                                player.getPlayer().getInventory().setLeggings(null);
-                            case 2:
-                                player.getPlayer().getInventory().setChestplate(null);
-                            case 3:
-                                player.getPlayer().getInventory().setHelmet(null);
-
+                for (ItemStack piece: player.getPlayer().getInventory().getArmorContents()) {
+                    if (Objects.equals(GConfig.itemManager.getItemId(piece), this.getId())) {
+                        if (i == 0) {
+                            player.getPlayer().getInventory().setBoots(null);
+                        } else if (i == 1) {
+                            player.getPlayer().getInventory().setLeggings(null);
+                        } else if (i == 2) {
+                            player.getPlayer().getInventory().setChestplate(null);
+                        } else if (i == 3) {
+                            player.getPlayer().getInventory().setHelmet(null);
                         }
                         player.updateInventory();
                         soundManager.play(player.getPlayer().getLocation(), Sound.ITEM_SHIELD_BREAK);
@@ -142,8 +146,8 @@ public class MetaDungeonItem extends ItemStack {
                     }
                     i++;
                 }
-
             }
+
         }
     }
 
@@ -155,7 +159,6 @@ public class MetaDungeonItem extends ItemStack {
     public Integer getAttackSpeed() {return this.attack_speed;}
     public Integer getStaminaCost() {return this.staminaCost;}
     public Integer getKnockback() {
-        System.out.println("KB " + this.knockback);
         return this.knockback;
     }
     public Integer getDamage() {return this.damage;}
@@ -163,6 +166,13 @@ public class MetaDungeonItem extends ItemStack {
     public Integer getDamagePercent() {return this.damagePercent;}
     public Integer getHealth() {return this.health;}
     public Integer getStamina() {return this.stamina;}
+    public double getRange() {
+        return this.range;
+    }
+
+    public Integer getDefence() {
+        return this.defence;
+    }
 
     public boolean isConsumable() {
         if (this.template.has("onConsume")) {
@@ -171,5 +181,5 @@ public class MetaDungeonItem extends ItemStack {
         return false;
 
     }
-    public ItemInterface getInterface() {return this.itemInterface;}
+    public ItemInterface getController() {return this.controller;}
 }

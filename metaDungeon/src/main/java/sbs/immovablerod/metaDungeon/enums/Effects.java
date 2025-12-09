@@ -2,10 +2,7 @@ package sbs.immovablerod.metaDungeon.enums;
 
 import sbs.immovablerod.metaDungeon.classes.MetaDungeonEffect;
 import sbs.immovablerod.metaDungeon.elements.EffectInterface;
-import sbs.immovablerod.metaDungeon.elements.effects.Dummy;
-import sbs.immovablerod.metaDungeon.elements.effects.Guarded;
-import sbs.immovablerod.metaDungeon.elements.effects.Speed;
-import sbs.immovablerod.metaDungeon.elements.effects.Strength;
+import sbs.immovablerod.metaDungeon.elements.effects.*;
 
 import java.util.Objects;
 
@@ -27,6 +24,12 @@ public enum Effects
         @Override
         public EffectInterface controller(MetaDungeonEffect root) {
             return new Speed(root);
+        }
+    },
+    REGEN("regen") {
+        @Override
+        public EffectInterface controller(MetaDungeonEffect root) {
+            return new Regen(root);
         }
     },
     GUARDED("guarded") {

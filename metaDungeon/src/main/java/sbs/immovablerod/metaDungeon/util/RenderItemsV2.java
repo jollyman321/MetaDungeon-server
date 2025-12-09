@@ -5,6 +5,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import de.tr7zw.nbtapi.NBT;
 import de.tr7zw.nbtapi.iface.ReadWriteNBT;
 import de.tr7zw.nbtapi.iface.ReadWriteNBTCompoundList;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.Style;
+import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.serializer.json.JSONComponentSerializer;
 import org.apache.commons.text.WordUtils;
 import org.bukkit.inventory.ItemStack;
 import sbs.immovablerod.metaDungeon.enums.Colors;
@@ -31,7 +37,7 @@ public class RenderItemsV2 {
            float range = (float) item.at("/range").asDouble(0);
 
 
-           int defence = item.at("/damage").asInt(0);
+           int defence = item.at("/defence").asInt(0);
            int movement = item.at("/movementSpeed").asInt(0);
            int attackSpeed = item.at("/attackSpeed").asInt(0);
            int staminaCost = item.at("/staminaCost").asInt(0);
@@ -49,27 +55,50 @@ public class RenderItemsV2 {
            // generate nbt data
            ReadWriteNBT nbt = NBT.createNBTObject();
 
-           String mcDisplayName = "{\"extra\":[{\"bold\":false,\"italic\":false,\"underlined\":false,\"strikethrough\":false,\"obfuscated\":false,\"color\":\"@COLOR\",\"text\":\"@NAME\"}],\"text\":\"\"}".replace(
-                   "@COLOR", Tiers.get(tier).color().toString()).replace("@NAME", displayName);
+            final TextComponent mcDisplayName = Component.text()
+                    .content(displayName)
+                    .color(Tiers.get(tier).color())
+                    .decoration(TextDecoration.ITALIC, false)
+                    .build();
 
            List<String> lore = new ArrayList<>();
 
            // ** Attributes **
-           if (maxHealth > 0) lore.add(renderLoreLine("Max Health: " + maxHealth, Colors.GOLD));
-           if (maxStamina > 0) lore.add(renderLoreLine("Max Stamina: " + maxStamina, Colors.GOLD));
+           if (maxHealth > 0) lore.add(renderLoreLine("Max Health: " + maxHealth, NamedTextColor.GOLD));
+           if (maxStamina > 0) lore.add(renderLoreLine("Max Stamina: " + maxStamina, NamedTextColor.GOLD));
 
-           if (damage > 0) lore.add(renderLoreLine("Damage: " + damage, Colors.DARK_AQUA));
-           if (damagePercent != 0) lore.add(renderLoreLine("Damage: +" + damagePercent + "%", Colors.DARK_AQUA));
-           if (attackSpeed > 0) lore.add(renderLoreLine("Attack Speed: " + attackSpeed, Colors.DARK_AQUA));
-           if (range > 0) lore.add(renderLoreLine("Range: " + range, Colors.DARK_AQUA));
-           if (knockback > 0) lore.add(renderLoreLine("Knockback: " + knockback, Colors.DARK_AQUA));
-           if (defence > 0) lore.add(renderLoreLine("Defence: " + defence, Colors.DARK_AQUA));
-           if (movement != 0) lore.add(renderLoreLine("Movement Speed: " + movement, Colors.DARK_AQUA));
-           if (staminaCost > 0) lore.add(renderLoreLine("Stamina Cost: " + staminaCost, Colors.DARK_AQUA));
+           if (damage != 0) lore.add(renderLoreLine("Damage: " + damage, NamedTextColor.DARK_AQUA));
+           if (damagePercent != 0) lore.add(renderLoreLine("Damage: +" + damagePercent + "%", NamedTextColor.DARK_AQUA));
+           if (attackSpeed != 0) lore.add(renderLoreLine("Attack Speed: " + attackSpeed, NamedTextColor.DARK_AQUA));
+           if (range != 0) lore.add(renderLoreLine("Range: " + range, NamedTextColor.DARK_AQUA));
+           if (knockback != 0) lore.add(renderLoreLine("Knockback: " + knockback, NamedTextColor.DARK_AQUA));
+           if (defence != 0) lore.add(renderLoreLine("Defence: " + defence, NamedTextColor.DARK_AQUA));
+           if (movement != 0) lore.add(renderLoreLine("Movement Speed: " + movement, NamedTextColor.DARK_AQUA));
+           if (staminaCost != 0) lore.add(renderLoreLine("Stamina Cost: " + staminaCost, NamedTextColor.DARK_AQUA));
            if (durability > -1) {
                nbt.getOrCreateCompound("custom_data").setInteger("durability_line", lore.size());
-               lore.add(renderLoreLine("Durability: " + durability, Colors.DARK_AQUA));
+               lore.add(renderLoreLine("Durability: " + durability, NamedTextColor.DARK_AQUA));
            }
+
+
+           if (item.at("/onConsume/changeHealth").asInt(0) != 0) {
+               lore.add(renderLoreLine("Heals: " + item.at("/onConsume/changeHealth").asInt(), NamedTextColor.RED));
+           }
+           if (item.at("/onConsume/changeStamina").asInt(0) != 0) {
+               lore.add(renderLoreLine("Stamina: " + item.at("/onConsume/changeStamina").asInt(), NamedTextColor.GREEN));
+           }
+           if (item.at("/onConsume/changeMaxHealth").asInt(0) != 0) {
+               lore.add(renderLoreLine("Max Health: " + item.at("/onConsume/changeMaxHealth").asInt(), NamedTextColor.DARK_RED));
+           }
+           if (item.at("/onConsume/changeLives").asInt(0) != 0) {
+               lore.add(renderLoreLine("Lives: " + item.at("/onConsume/changeLives").asInt(), NamedTextColor.GOLD));
+           }
+            if (!item.path("lore").asText().isEmpty()) {
+                for (String line: item.path("lore").asText().split("\n")) {
+                    lore.add(renderLoreLine(line, NamedTextColor.DARK_PURPLE));
+                }
+            }
+
            if (damage > 0 && attackSpeed > 0) {
                System.out.println("DPS for " + displayName + " = " + (float) damage * ( (float) attackSpeed/10));
            }
@@ -81,11 +110,6 @@ public class RenderItemsV2 {
             ReadWriteNBT displayCompound = nbt.getOrCreateCompound("tooltip_display");
             displayCompound.getStringList("hidden_components").add("attribute_modifiers");
 
-            ReadWriteNBT attributeModifiersRange = nbt.getCompoundList("attribute_modifiers").addCompound();
-            attributeModifiersRange.setString("id", "entity_interaction_range");
-            attributeModifiersRange.setString("type", "entity_interaction_range");
-            attributeModifiersRange.setString("operation", "add_value");
-            attributeModifiersRange.setFloat("amount", range);
 
             // consumables
             if (item.has("consumable")) {
@@ -104,7 +128,7 @@ public class RenderItemsV2 {
 
 
 
-            nbt.setString("item_name", displayName);
+            nbt.setString("item_name", JSONComponentSerializer.json().serialize(mcDisplayName));
             for (String ele : lore) nbt.getStringList("lore").add(ele);
 
             //System.out.println(Serialize.serializeItem(item));
@@ -116,12 +140,13 @@ public class RenderItemsV2 {
 
 
     }
-    private static String renderLoreLine(String text, Colors color) {
-        String string = "{\"bold\":false,\"italic\":false,\"underlined\":false,\"strikethrough\":false,\"obfuscated\":false,\"color\":\"@COLOR\",\"text\":\"@TEXT\"}";
-        // "{\"extra\":[{\"bold\":false,\"italic\":false,\"underlined\":false,\"strikethrough\":false,\"obfuscated\":false,\"color\":\"@COLOR\",\"text\":\"@TEXT\"}],\"text\":\"\"}";
+    private static String renderLoreLine(String text, NamedTextColor color) {
+        final TextComponent textComponent = Component.text()
+                .content(text)
+                .color(color)
+                .decoration(TextDecoration.ITALIC, false)
+                .build();
 
-        string = string.replace("@TEXT", text);
-        string = string.replace("@COLOR", color.toString());
-        return string;
+        return JSONComponentSerializer.json().serialize(textComponent);
     }
 }

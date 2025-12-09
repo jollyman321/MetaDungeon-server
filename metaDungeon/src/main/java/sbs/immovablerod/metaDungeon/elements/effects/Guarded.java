@@ -11,7 +11,14 @@ public class Guarded extends EffectInterface {
     }
 
     @Override
-    public void onUpdate(MetaDungeonEntity entity) {
-        entity.defence += this.root.getLevel();
+    public void onInitiated(MetaDungeonEntity entity) {
+        super.onInitiated(entity);
+        entity.changeDefence(this.root.getLevel());
+    }
+
+    @Override
+    public void onClear(MetaDungeonEntity entity) {
+        super.onClear(entity);
+        entity.changeDefence(-this.root.getLevel());
     }
 }

@@ -1,41 +1,42 @@
 package sbs.immovablerod.metaDungeon.enums;
 
 
+import net.kyori.adventure.text.format.NamedTextColor;
+
 public enum Tiers {
     ONE (1) {
         @Override
-        public Colors color() {
-            return Colors.DARK_GREEN;
+        public NamedTextColor color() {
+            return NamedTextColor.DARK_GREEN;
         }
     },
     TWO (2) {
         @Override
-        public Colors color() {
-            return Colors.BLUE;
+        public NamedTextColor color() {
+            return NamedTextColor.BLUE;
         }
     },
     THREE (3) {
         @Override
-        public Colors color() {
-            return Colors.GOLD;
+        public NamedTextColor color() {
+            return NamedTextColor.GOLD;
         }
     },
     FOUR (4) {
         @Override
-        public Colors color() {
-            return Colors.LIGHT_PURPLE;
+        public NamedTextColor color() {
+            return NamedTextColor.LIGHT_PURPLE;
         }
     },
     TEN (10) {
         @Override
-        public Colors color() {
-            return Colors.LIGHT_PURPLE;
+        public NamedTextColor color() {
+            return NamedTextColor.LIGHT_PURPLE;
         }
     };
 
     final private int id;
-
-    public abstract Colors color();
+    public abstract NamedTextColor color();
 
     Tiers(int id) {
         this.id = id;

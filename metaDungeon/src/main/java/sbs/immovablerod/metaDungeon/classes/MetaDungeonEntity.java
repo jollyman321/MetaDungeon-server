@@ -1,9 +1,14 @@
 package sbs.immovablerod.metaDungeon.classes;
 
 import org.bukkit.Bukkit;
+import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 import sbs.immovablerod.metaDungeon.MetaDungeon;
 import sbs.immovablerod.metaDungeon.enums.Effects;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
 
 public class MetaDungeonEntity {
     private final MetaDungeon plugin = MetaDungeon.getInstance();
@@ -22,7 +27,7 @@ public class MetaDungeonEntity {
     public int knockback;
     public int armorPierce;
 
-    public ArrayList<MetaDungeonEffect> activeEffects;
+    public List<MetaDungeonEffect> activeEffects;
 
     public MetaDungeonEntity (
             int health,
@@ -49,55 +54,29 @@ public class MetaDungeonEntity {
         this.activeEffects = new ArrayList<>();
     }
     public void receiveAttack(MetaDungeonEntity attacker) {
-        this.setHealth(this.health - Math.max(
-                attacker.getDamage() - Math.max(this.defence - attacker.getArmorPierce(), 0),
-                1));
-    }
-
-    public void addEffect(MetaDungeonEffect effect) {
-        if (!this.activeEffects.contains(effect)) {
-            this.activeEffects.add(effect);
-            effect.apply(this);
-
-            // this code should be handled by MetaDungeonEffect
-            if (effect.getDuration() > 0) {
-                plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                    effect.deactivate();
-                    this.activeEffects.remove(effect);
-                }, 20L * effect.getDuration()));
-            }
-
-            this.updateStats();
-        }
 
     }
 
-    public void updateStats() {
-        this.defence = this.baseDefence;
-        this.damage = this.baseDamage;
-        this.movementSpeed = this.baseMovementSpeed;
-        this.knockback = this.baseKnockback;
-        this.armorPierce = this.baseArmorPierce;
+    public void onDealtAttack(MetaDungeonEntity victum) {
 
-        for (MetaDungeonEffect effect : this.activeEffects) {
-            if (effect.isActive()) {
-                effect.getController().onUpdate(this);
-            }
-        }
-        this.setMovementSpeed(this.movementSpeed);
     }
 
-    public void setHealth(int health) {
-        this.health = health;
+    public void kill() {
+        // placeholder for subclasses
     }
-    public void setMovementSpeed(float value) {
-        this.movementSpeed = value;
+
+    public String getName() {
+        return "BASE_ENTITY";
     }
-    public int getHealth() {
-        return this.health;
+
+    public UUID getId() {
+        return null;
     }
     public int getDamage() {
         return this.damage;
+    }
+    public int getDefence() {
+        return this.defence;
     }
     public int getArmorPierce() {
         return this.armorPierce;
@@ -105,7 +84,47 @@ public class MetaDungeonEntity {
     public float getMovementSpeed() {
         return this.movementSpeed;
     }
-    public int getKnockback() {
-        return this.knockback;
+    public @NotNull Vector getKnockback() {
+        return null;
+    }
+    public int getHealth() {
+        return this.health;
+    }
+
+
+    public HashMap<String, MetaDungeonItem> getEquipment() {
+        // placeholder;  atm monsters can't have gear
+        return new HashMap<>();
+    }
+
+    public void setHealth(int health) {
+        this.health = health;
+    }
+    public void setDamage(int damage) {
+        this.damage = damage;
+    }
+
+    public void setDefence(int defence) {
+        this.defence = defence;
+    }
+
+    public void setMovementSpeed(float value) {
+        this.movementSpeed = value;
+    }
+
+    public void changeHealth(int amount) {
+        this.setHealth(amount + this.health);
+    }
+    public void changeDamage(int amount) {
+        this.setDamage(amount + this.damage);
+    }
+    public void changeDefence(int amount) {
+        this.setDefence(amount + this.defence);
+    }
+    public void changeMovementSpeed(int amount) {
+        this.setMovementSpeed(amount + this.movementSpeed);
+    }
+    public void setVelocity(@NotNull Vector knockback) {
+        // placeholder should be overwritten in child classes
     }
 }

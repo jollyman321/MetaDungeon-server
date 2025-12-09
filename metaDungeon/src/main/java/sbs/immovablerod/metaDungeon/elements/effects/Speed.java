@@ -11,7 +11,14 @@ public class Speed extends EffectInterface {
     }
 
     @Override
-    public void onUpdate(MetaDungeonEntity entity) {
-        entity.movementSpeed += this.root.getLevel();
+    public void onInitiated(MetaDungeonEntity entity) {
+        super.onInitiated(entity);
+        entity.changeMovementSpeed(this.root.getLevel());
+    }
+
+    @Override
+    public void onClear(MetaDungeonEntity entity) {
+        super.onClear(entity);
+        entity.changeMovementSpeed(-this.root.getLevel());
     }
 }

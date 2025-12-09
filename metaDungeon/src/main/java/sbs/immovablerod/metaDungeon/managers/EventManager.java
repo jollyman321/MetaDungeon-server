@@ -17,7 +17,7 @@ public class EventManager {
     }
 
     public void add(String event, int level) {
-        this.events.add(new MetaDungeonEvent(event, plugin.eventTemplates.path(event), level));
+        this.events.add(new MetaDungeonEvent(event, plugin.jsonLoader.eventTemplates.path(event), level));
     }
 
     public void remove(MetaDungeonEvent event) {

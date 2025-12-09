@@ -1,33 +1,41 @@
 package sbs.immovablerod.metaDungeon.enums;
 
 
+import net.kyori.adventure.text.format.NamedTextColor;
+
 public enum Rarities {
     COMMON (1) {
         @Override
-        public Colors color() { return Colors.DARK_GREEN; }
+        public NamedTextColor color() { return NamedTextColor.DARK_GREEN; }
+    },
+    UNCOMMON (2) {
+        @Override
+        public NamedTextColor color() {
+            return NamedTextColor.YELLOW;
+        }
     },
     RARE (3) {
         @Override
-        public Colors color() {
-            return Colors.BLUE;
+        public NamedTextColor color() {
+            return NamedTextColor.BLUE;
         }
     },
     LEGENDARY (5) {
         @Override
-        public Colors color() {
-            return Colors.GOLD;
+        public NamedTextColor color() {
+            return NamedTextColor.GOLD;
         }
     },
     MYTHIC (6) {
         @Override
-        public Colors color() {
-            return Colors.LIGHT_PURPLE;
+        public NamedTextColor color() {
+            return NamedTextColor.LIGHT_PURPLE;
         }
     };
 
     final private int id;
 
-    public abstract Colors color();
+    public abstract NamedTextColor color();
 
     Rarities(int id) {
         this.id = id;

@@ -1,5 +1,9 @@
 package sbs.immovablerod.metaDungeon.classes;
 
+import net.kyori.adventure.audience.Audience;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
@@ -9,15 +13,17 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 import sbs.immovablerod.metaDungeon.MetaDungeon;
 import sbs.immovablerod.metaDungeon.enums.Colors;
 import sbs.immovablerod.metaDungeon.enums.Constants;
 import sbs.immovablerod.metaDungeon.enums.Symbols;
 import sbs.immovablerod.metaDungeon.game.GConfig;
-import sbs.immovablerod.metaDungeon.util.ItemUtil;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
 
 import static java.lang.Math.round;
 
@@ -26,6 +32,8 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
     private final MetaDungeon plugin = MetaDungeon.getInstance();
     private final int inputDelayMax;
     private final int maxInvincibilityFrames;
+    private final String team;
+    private double range;
     private int invincibilityFrames;
     private int currentInputDelay;
     private double baseStamina;
@@ -52,6 +60,7 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
         this.inGame = false;
         this.dead = false;
 
+        this.team = "survivers";
         this.player = player;
         this.stamina = 100.0;
         this.baseStamina = 100.0;
@@ -60,6 +69,7 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
         this.staminaRecovery = this.staminaRecoveryTime;
         this.maxHealth = 100;
         this.lives = 4;
+        this.range = 0.0;
 
 
 
@@ -85,14 +95,14 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
 
     }
 
-    public void onTargetHit() {
+    @Override
+    public void onDealtAttack(MetaDungeonEntity victum) {
         if (this.gear.get("mainHand") != null) {
             this.gear.get("mainHand").onTargetHit(this);
             // note that the weapon durability is changed during the attack
             // this just updates the item ui
             this.gear.get("mainHand").changeDurability(1, this.getPlayer().getInventory().getItemInMainHand(), this);
         }
-        ;
 
         if (this.gear.get("mainHand") != null && this.gear.get("mainHand").getAttackSpeed() >= 1) {
             this.attackCoolDown = ((float) 10 /((float) this.gear.get("mainHand").getAttackSpeed() /10));
@@ -100,19 +110,28 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
             plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 this.player.addPotionEffect(new PotionEffect(PotionEffectType.HASTE, (2 * (int) this.attackCoolDown), 255));
             }, 4L));
-
         }
+    }
 
+    @Override
+    public void receiveAttack(MetaDungeonEntity attacker) {
+        super.receiveAttack(attacker);
+
+        this.invincibilityFrames = this.maxInvincibilityFrames;
+        for (String key: this.gear.keySet()) {
+            MetaDungeonItem item = this.gear.get(key);
+            if (item != null && item.category.equals("armor")) {
+                if (key.equals("helmet")) item.changeDurability(1, this.getPlayer().getInventory().getHelmet(), this);
+                if (key.equals("chestplate")) item.changeDurability(1, this.getPlayer().getInventory().getChestplate(), this);
+                if (key.equals("leggings")) item.changeDurability(1, this.getPlayer().getInventory().getLeggings(), this);
+                if (key.equals("boots")) item.changeDurability(1, this.getPlayer().getInventory().getBoots(), this);
+
+                item.getController().onReceiveAttack(attacker, this);
+            }
+        }
 
     }
 
-    public boolean getInGame() {return this.inGame;}
-    public void setInGame(boolean value) {this.inGame = value;}
-    public int getInputDelay() {return this.currentInputDelay;}
-    public void resetInputDelay() {this.currentInputDelay = this.inputDelayMax;}
-    public boolean isInvincible() {return this.invincibilityFrames > 0;}
-    public void resetInvincibility() {this.invincibilityFrames = this.maxInvincibilityFrames;}
-    public boolean isDead() {return this.dead;}
 
     public boolean canAttack() {
         return this.attackCoolDown <= 0 &&
@@ -121,129 +140,42 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
             && this.gear.get("mainHand").getStaminaCost() <= this.stamina;
 
     }
-
-    public Player getPlayer() {return this.player;}
-
-    public void setPlayer(Player player) {
-        // resetting the player is required in the event of a disconnect
-        this.player = player;
-    }
-
-    public Double getStamina() {return stamina;}
-
-    public Integer getMaxHealth() {return this.maxHealth;}
-
-
-    public void changeMaxHealth(int amount) {
-        this.setMaxHealth(this.baseHealth + amount);
-    }
-
-    public void setMaxHealth(int amount) {
-        this.baseHealth = amount;
-        this.updateStats();
-    }
-
-
-    public Integer getLives() {return this.lives;}
-    public void setLives(int value) {
-        this.lives = value;
-    }
-    public HashMap<String, MetaDungeonItem> getGear() {return this.gear;}
-
-    public void setStamina(Double amount) {
-        this.stamina = Math.min(amount, this.maxStamina);
-        this.player.setFoodLevel((int) Math.min( Math.floor(this.stamina / this.maxStamina * 19), 19));
-        this.displayActionBar();
-    }
-    public void changeStamina(Double amount) {
-        if (amount < 0) {
-            this.staminaRecovery = 0;
-        }
-        this.setStamina(this.stamina + amount);
-    }
-    public double getMaxStamina() {
-        return this.maxStamina;
-    }
-    public void setMaxStamina(double amount) {
-        this.baseStamina = amount;
-    }
-
-    @Override
-    public void setHealth(int health) {
-        super.setHealth(Math.min(health, this.maxHealth));
-
-        if (this.health <= 0) {
-            this.kill();
-        } else {
-            this.player.setHealth(Math.min(Math.max(((double) this.health / this.maxHealth) * 20, 1), 20));
-        }
-        this.displayActionBar();
-    }
-
-    @Override
-    public void setMovementSpeed(float value) {
-        this.movementSpeed = value;
-        this.player.setWalkSpeed(value / Constants.PLAYER_SPEED_MODIFIER.value());
-    }
-    public void changeHealth(int amount) {
-        this.setHealth(Math.min(this.health + amount, this.maxHealth));
-    }
-
-    @Override
-    public void updateStats() {
-        super.updateStats();
-        this.maxHealth = this.baseHealth;
-        this.maxStamina = this.baseStamina;
-
-        float damagePercentBoost = 1;
-        for (MetaDungeonItem item : this.gear.values()) {
-            if (item != null) {
-                damagePercentBoost += (float) item.getDamagePercent() / 100;
-                this.defence += item.defence;
-                this.damage  += item.damage;
-                this.movementSpeed += item.movement;
-                this.knockback += item.getKnockback();
-                this.armorPierce += item.getArmorPierce();
-
-                this.maxHealth  += item.getHealth();
-                this.maxStamina += item.getStamina();
-            }
-        }
-
-        this.damage = round(this.damage * damagePercentBoost);
-
-        this.setMovementSpeed(this.movementSpeed);
-        this.displayActionBar();
-    }
-
     public void updateInventory() {
-        this.gear.put("mainHand", ItemUtil.getAdvancedItem(this.player.getInventory().getItemInMainHand()));
-        this.gear.put("helmet",ItemUtil.getAdvancedItem(this.player.getInventory().getHelmet()));
-        this.gear.put("chestplate",ItemUtil.getAdvancedItem(this.player.getInventory().getChestplate()));
-        this.gear.put("leggings", ItemUtil.getAdvancedItem(this.player.getInventory().getLeggings()));
-        this.gear.put("boots",ItemUtil.getAdvancedItem(this.player.getInventory().getBoots()));
+        this.gear.put("mainHand", GConfig.itemManager.getAdvancedItem(this.player.getInventory().getItemInMainHand()));
+        this.gear.put("helmet",GConfig.itemManager.getAdvancedItem(this.player.getInventory().getHelmet()));
+        this.gear.put("chestplate",GConfig.itemManager.getAdvancedItem(this.player.getInventory().getChestplate()));
+        this.gear.put("leggings", GConfig.itemManager.getAdvancedItem(this.player.getInventory().getLeggings()));
+        this.gear.put("boots",GConfig.itemManager.getAdvancedItem(this.player.getInventory().getBoots()));
+
+        this.player.getAttribute(Attribute.ENTITY_INTERACTION_RANGE).setBaseValue(this.getRange());
     }
 
     public void displayActionBar() {
-
         if (!this.dead) {
-            this.player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText("@HEALTH/@MAX_HEALTH   |   @DAMAGE   |   @DEFENCE   |   @STAMINA/@MAX_STAMINA".replace(
-                            "@HEALTH", Symbols.HEART.color().code() + String.valueOf(this.health)
-                    ).replace("@MAX_HEALTH", this.maxHealth.toString() + Symbols.HEART).replace(
-                            "@DAMAGE", Symbols.DAMAGE.color().code() + String.valueOf(this.damage) + Symbols.DAMAGE).replace(
-                            "@DEFENCE", Symbols.DEFENCE.color().code() + String.valueOf(this.defence) + Symbols.DEFENCE).replace(
-                            "@STAMINA", Symbols.STAMINA.color().code() + round(this.stamina)).replace(
-                            "@MAX_STAMINA", String.valueOf(round(this.maxStamina)) + Symbols.STAMINA)
-            ));
+            Component actionBar = Component
+                    .text(this.getHealth() + "/" + this.getMaxHealth() + Symbols.HEART, Symbols.HEART.color())
+                    .append(Component.text("  |  ", NamedTextColor.WHITE))
+                    .append(Component.text(this.getDamage() + "" + Symbols.DAMAGE, Symbols.DAMAGE.color()))
+                    .append(Component.text("  |  ", NamedTextColor.WHITE))
+                    .append(Component.text(this.getDefence() + "" + Symbols.DEFENCE, Symbols.DEFENCE.color()))
+                    .append(Component.text("  |  ", NamedTextColor.WHITE))
+                    .append(Component.text(round(this.getStamina()) + "/" + round(this.getMaxStamina()) + Symbols.STAMINA, Symbols.STAMINA.color()));
+            this.player.sendActionBar(actionBar);
         } else {
-            this.player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(
-                    "§eYou are §cDEAD§e left click to respawn @COLOR(@LIVES lives remaining)".replace
-                            ("@COLOR", Symbols.LIFE.color().code()).replace
-                            ("@LIVES", String.valueOf(this.lives - 1))
-            ));
+            this.player.sendActionBar(
+                    GConfig.messageManager.getMM().deserialize(plugin.jsonLoader.messages.at("/player/deadActionBar").asText(),
+                            Placeholder.component("lives", Component.text(String.valueOf(this.getLives() - 1), Symbols.LIFE.color())))
+            );
         }
-    }
 
+        final Component header = Component.text("Meta Dungeon v1.1", NamedTextColor.BLUE);
+        final Component footer = Component.text("Lives Remaining: ", NamedTextColor.WHITE)
+                .append(Component.text(String.valueOf(this.getLives() - 1), NamedTextColor.DARK_AQUA))
+                .append(Component.text("  |  Round: ", NamedTextColor.WHITE))
+                .append(Component.text(plugin.game.currentRound, NamedTextColor.YELLOW));
+        this.player.sendPlayerListHeaderAndFooter(header, footer);
+
+    }
     public void update() {
 
         if (this.gear.get("mainHand") != null ) {
@@ -296,6 +228,7 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
         }
     }
 
+    @Override
     public void kill() {
         GConfig.messageManager.messageAll(this.player.getDisplayName() + " was slain...", Colors.DARK_RED);
 
@@ -307,18 +240,177 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
     }
 
     @Override
-    public void receiveAttack(MetaDungeonEntity attacker) {
-        super.receiveAttack(attacker);
-        this.invincibilityFrames = this.maxInvincibilityFrames;
+    public UUID getId() {
+        return this.player.getUniqueId();
+    }
 
-        for (String key: this.gear.keySet()) {
-            MetaDungeonItem item = this.gear.get(key);
-            if (item != null && item.category.equals("armor")) {
-                if (key.equals("helmet")) item.changeDurability(1, this.getPlayer().getInventory().getHelmet(), this);
-                if (key.equals("chestplate")) item.changeDurability(1, this.getPlayer().getInventory().getChestplate(), this);
-                if (key.equals("leggings")) item.changeDurability(1, this.getPlayer().getInventory().getLeggings(), this);
-                if (key.equals("boots")) item.changeDurability(1, this.getPlayer().getInventory().getBoots(), this);
+    public String getTeam() {
+        return this.team;
+    }
+
+    @Override
+    public @NotNull Vector getKnockback() {
+        float value = this.knockback;
+        for (MetaDungeonItem item : this.getEquipment().values()) {
+            value += item.getKnockback();
+        }
+        return this.player.getLocation().getDirection().setY(0).normalize().multiply(
+                (value)/30);
+    }
+
+    public boolean isInGame() {return this.inGame;}
+    public void setInGame(boolean value) {this.inGame = value;}
+    public int getInputDelay() {return this.currentInputDelay;}
+    public void resetInputDelay() {this.currentInputDelay = this.inputDelayMax;}
+    public boolean isInvincible() {return this.invincibilityFrames > 0;}
+    public void resetInvincibility() {this.invincibilityFrames = this.maxInvincibilityFrames;}
+    public boolean isDead() {return this.dead;}
+
+
+    public void setPlayer(Player player) {
+        // resetting the player is required in the event of a disconnect
+        this.player = player;
+    }
+
+    public Player getPlayer() {
+        return this.player;
+    }
+
+    public String getName() {
+        return this.player.getName();
+    }
+
+    public Integer getMaxHealth() {
+        int value = this.maxHealth;
+        for (MetaDungeonItem item : this.getEquipment().values()) {
+            value += item.getHealth();
+        }
+        return value;
+    }
+
+    public double getMaxStamina() {
+        double value = this.maxStamina;
+        for (MetaDungeonItem item : this.getEquipment().values()) {
+            value += item.getStamina();
+        }
+        return value;
+    }
+
+    public Double getStamina() {
+        return this.stamina;
+    }
+
+    public Integer getLives() {
+        return this.lives;
+    }
+
+    @Override
+    public int getDamage() {
+        int damage = this.damage;
+        float damagePercentBoost = 1;
+
+        for (MetaDungeonItem item : this.getEquipment().values()) {
+            damage += item.getDamage();
+            damagePercentBoost += (float) item.getDamagePercent() / 100;
+        }
+
+        return round(damage * damagePercentBoost);
+    }
+
+    @Override
+    public int getDefence() {
+        int defence = this.defence;
+        for (MetaDungeonItem item : this.getEquipment().values()) {
+            defence += item.getDefence();
+        }
+        return defence;
+    }
+
+    @Override
+    public int getArmorPierce() {
+        int value = this.armorPierce;
+        for (MetaDungeonItem item : this.getEquipment().values()) {
+            value += item.getArmorPierce();
+        }
+        return value;
+    }
+
+    public double getRange() {
+        double value = this.range;
+        for (MetaDungeonItem item : this.getEquipment().values()) {
+            value += item.getRange();
+        }
+        return value;
+    }
+
+    @Deprecated
+    public HashMap<String, MetaDungeonItem> getGear() {
+        return this.gear;
+    }
+
+    public HashMap<String, MetaDungeonItem> getEquipment() {
+        // returns only gear the player has equipped
+        HashMap<String, MetaDungeonItem> output = new HashMap<>();
+
+        for (String key :  this.gear.keySet()) {
+            if (this.gear.get(key) != null) {
+                output.put(key, this.gear.get(key));
             }
         }
+        return output;
     }
+
+    public void setMaxHealth(int amount) {
+        this.maxHealth = amount;
+    }
+
+    @Override
+    public void setHealth(int health) {
+        super.setHealth(Math.min(health, this.maxHealth));
+
+        if (this.health <= 0) {
+            this.kill();
+        } else {
+            this.player.setHealth(Math.min(Math.max(((double) this.health / this.maxHealth) * 20, 1), 20));
+        }
+        this.displayActionBar();
+    }
+
+    @Override
+    public void setMovementSpeed(float value) {
+        this.movementSpeed = value;
+        this.player.setWalkSpeed(value / Constants.PLAYER_SPEED_MODIFIER.value());
+    }
+
+    public void setLives(int value) {
+        this.lives = value;
+    }
+
+    public void setStamina(Double amount) {
+        this.stamina = Math.min(amount, this.maxStamina);
+        this.player.setFoodLevel((int) Math.min( Math.floor(this.stamina / this.maxStamina * 19), 19));
+        this.displayActionBar();
+    }
+
+    @Override
+    public void setVelocity(@NotNull Vector knockback) {
+        this.player.setVelocity(knockback);
+    }
+
+    public void changeMaxHealth(int amount) {
+        this.setMaxHealth(this.maxHealth + amount);
+    }
+
+    public void changeStamina(Double amount) {
+        if (amount < 0) {
+            this.staminaRecovery = 0;
+        }
+        this.setStamina(this.stamina + amount);
+    }
+
+    @Override
+    public void changeHealth(int amount) {
+        this.setHealth(Math.min(this.health + amount, this.maxHealth));
+    }
+
 }

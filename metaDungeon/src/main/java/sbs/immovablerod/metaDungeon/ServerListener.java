@@ -9,13 +9,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.*;
-import sbs.immovablerod.metaDungeon.classes.MetaDungeonItem;
-import sbs.immovablerod.metaDungeon.classes.MetaDungeonMonster;
-import sbs.immovablerod.metaDungeon.classes.MetaDungeonPlayer;
-import sbs.immovablerod.metaDungeon.classes.MetaDungeonProjectile;
+import sbs.immovablerod.metaDungeon.classes.*;
 import sbs.immovablerod.metaDungeon.game.GConfig;
-
-import static sbs.immovablerod.metaDungeon.util.ItemUtil.getAdvancedItem;
 
 public class ServerListener implements Listener {
     private final MetaDungeon plugin = MetaDungeon.getInstance();
@@ -24,63 +19,44 @@ public class ServerListener implements Listener {
     public void onPlayerJoin(PlayerJoinEvent event) {
         Bukkit.broadcastMessage("Welcome to the server - niggers are halve price today so get them while they last!");
 
-        if (!plugin.players.containsKey(event.getPlayer().getUniqueId())) {
-            System.out.println("player " + event.getPlayer().getUniqueId() + " added to player config");
-            plugin.players.put(event.getPlayer().getUniqueId(), new MetaDungeonPlayer(event.getPlayer()));
-        }
+        GConfig.playerManager.add(event.getPlayer());
+        GConfig.messageManager.addPlayer(event.getPlayer());
 
-        if (plugin.players.get(event.getPlayer().getUniqueId()).getInGame()) {
-            plugin.players.get(event.getPlayer().getUniqueId()).setPlayer(event.getPlayer());
-        }
     }
 
     @EventHandler(priority=EventPriority.HIGH)
     public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
-
         if (event.getEntity() instanceof Player) {
             // handles damage dealt to player
             Player player = (Player) event.getEntity();
-            MetaDungeonPlayer playerConfig = plugin.players.get(player.getUniqueId());
-            if (playerConfig.isInvincible()) event.setCancelled(true);
+            MetaDungeonPlayer hitPlayer = GConfig.playerManager.getFromID(player.getUniqueId());
+            if (hitPlayer.isInvincible()) event.setCancelled(true);
 
             else {
                 MetaDungeonMonster attacker = GConfig.entityManager.getFromID(event.getDamager().getUniqueId());
                 event.setDamage(0);
-                try {
-                    playerConfig.receiveAttack(attacker);
-                    player.updateInventory();
-                    playerConfig.updateInventory();
-                } catch (NullPointerException e) {
-                    System.out.println("[WARN] could not find entity profile for " + event.getDamager().getUniqueId());
-                    System.out.println(e);
-                }
+
+                MetaDungeonAttack attack = new MetaDungeonAttack(attacker, hitPlayer);
+                attack.resolve();
             }
 
         } else if (event.getDamager() instanceof Player) {
-            // handles players inflicting damage
+            // handles player inflicted damage
             Player player = (Player) event.getDamager();
-            MetaDungeonPlayer playerConfig = plugin.players.get(player.getUniqueId());
+            MetaDungeonPlayer attackingPlayer = GConfig.playerManager.getFromID(player.getUniqueId());
 
             event.setDamage(0);
 
-            if (!playerConfig.canAttack()) {
+            if (!attackingPlayer.canAttack()) {
                 event.setCancelled(true);}
             else {
                 MetaDungeonMonster target = GConfig.entityManager.getFromID(event.getEntity().getUniqueId());
-                int damage = playerConfig.getDamage();
-                System.out.println("attack landed " + damage);
-                playerConfig.onTargetHit();
 
-                if (damage < 1) event.setCancelled(true);
-                try {
-                    target.getEntity().setVelocity(playerConfig.getPlayer().getLocation().getDirection().setY(0).normalize().multiply(
-                            ((float) playerConfig.getKnockback())/30)
-                    );
-                    target.receiveAttack(playerConfig);
-                } catch (NullPointerException e) {
-                    System.out.println("[WARN] could not find entity profile for " + event.getEntity().getUniqueId());
-                    System.out.println(e);
-                }
+                if (attackingPlayer.getDamage() < 1) event.setCancelled(true);
+
+                MetaDungeonAttack attack = new MetaDungeonAttack(attackingPlayer, target);
+                attack.resolve();
+
             }
         }
     }
@@ -92,7 +68,7 @@ public class ServerListener implements Listener {
         }
         if (event.getCause().equals(EntityDamageEvent.DamageCause.FALL)) {
             Player player = (Player) event.getEntity();
-            MetaDungeonPlayer playerConfig = plugin.players.get(player.getUniqueId());
+            MetaDungeonPlayer playerConfig = GConfig.playerManager.getFromID(player.getUniqueId());
             playerConfig.setHealth(playerConfig.getHealth() - (int) event.getDamage() * 5);
             event.setDamage(0);
         }
@@ -105,21 +81,14 @@ public class ServerListener implements Listener {
             MetaDungeonMonster shooter = GConfig.entityManager.getFromID(entity.getUniqueId());
             if (shooter != null) {
                 Player player = (Player) event.getHitEntity();
-                MetaDungeonPlayer target = plugin.players.get(player.getUniqueId());
+                MetaDungeonPlayer target = GConfig.playerManager.getFromID(player.getUniqueId());
 
-                target.receiveAttack(shooter);
+                MetaDungeonAttack attack = new MetaDungeonAttack(shooter, target);
+                attack.resolve();
 
             } else {
                 System.out.println("[WARN] unregister projectile hit caused by " + entity.getName());
             }
-        } else if (event.getEntity().getShooter() instanceof Player) {
-            System.out.println("testxx");
-            if (plugin.projectiles.containsKey(event.getEntity().getUniqueId())) {
-                System.out.println("testyy");
-                MetaDungeonMonster monster = GConfig.entityManager.getFromID(event.getHitEntity().getUniqueId());
-                monster.setHealth(monster.getHealth() - plugin.projectiles.get(event.getEntity().getUniqueId()).getDamage());
-            }
-
         } else {
             event.setCancelled(true);
         }
@@ -128,7 +97,7 @@ public class ServerListener implements Listener {
     @EventHandler
     public void onEntityShootBow(EntityShootBowEvent event) {
         if (event.getEntity() instanceof Player) {
-            MetaDungeonPlayer player = plugin.players.get(event.getEntity().getUniqueId());
+            MetaDungeonPlayer player = GConfig.playerManager.getFromID(event.getEntity().getUniqueId());
             plugin.projectiles.put(
                     event.getProjectile().getUniqueId(),
                     new MetaDungeonProjectile(event.getEntity().getUniqueId(), player.getDamage())
@@ -139,13 +108,13 @@ public class ServerListener implements Listener {
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent event) {
 
-        MetaDungeonPlayer playerConfig = plugin.players.get(event.getPlayer().getUniqueId());
+        MetaDungeonPlayer playerConfig = GConfig.playerManager.getFromID(event.getPlayer().getUniqueId());
         if (playerConfig.getInputDelay() <= 0) {
             playerConfig.resetInputDelay();
 
             String action = event.getAction().toString();
             if (playerConfig.isDead() && action.startsWith("LEFT_CLICK")
-                    && plugin.players.size() > 1
+                    && GConfig.playerManager.getAll().size() > 1
                     && playerConfig.getLives() > 1
             ) {
                 playerConfig.respawn();
@@ -153,7 +122,7 @@ public class ServerListener implements Listener {
             } else if (action.startsWith("RIGHT_CLICK")) {
                 MetaDungeonItem item = playerConfig.getGear().get("mainHand");
                 if (item != null) {
-                    item.getInterface().onRightClick(playerConfig);
+                    item.getController().onRightClick(playerConfig);
                 }
             }
         }
@@ -163,15 +132,15 @@ public class ServerListener implements Listener {
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event) {
         System.out.println("[WARN] Uncaught player death");
-        MetaDungeonPlayer playerConfig = plugin.players.get(event.getEntity().getUniqueId());
-        if (playerConfig.getInGame()) playerConfig.kill();
+        MetaDungeonPlayer playerConfig = GConfig.playerManager.getFromID(event.getEntity().getUniqueId());
+        if (playerConfig.isInGame()) playerConfig.kill();
 
     }
 
     @EventHandler
     public void onPlayerItemConsume(PlayerItemConsumeEvent event) {
         try {
-            getAdvancedItem(event.getItem()).consume(plugin.players.get(event.getPlayer().getUniqueId()));
+            GConfig.itemManager.getAdvancedItem(event.getItem()).consume(GConfig.playerManager.getFromID(event.getPlayer().getUniqueId()));
             event.setCancelled(true);
         } catch (NullPointerException ignored) {System.out.println("could not find item on consume");}
 
@@ -180,16 +149,14 @@ public class ServerListener implements Listener {
     @EventHandler
     public void onInventoryInteract(InventoryClickEvent event) {
         plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            plugin.players.get(event.getWhoClicked().getUniqueId()).updateInventory();
-            plugin.players.get(event.getWhoClicked().getUniqueId()).updateStats();
+            GConfig.playerManager.getFromID(event.getWhoClicked().getUniqueId()).updateInventory();
             }, 5L));
     }
 
     @EventHandler
     public void onPlayerItemHeld(PlayerItemHeldEvent event) {
         plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            plugin.players.get(event.getPlayer().getUniqueId()).updateInventory();
-            plugin.players.get(event.getPlayer().getUniqueId()).updateStats();
+            GConfig.playerManager.getFromID(event.getPlayer().getUniqueId()).updateInventory();
         }, 5L));
     }
 

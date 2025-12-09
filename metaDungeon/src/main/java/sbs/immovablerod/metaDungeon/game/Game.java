@@ -25,44 +25,44 @@ import static sbs.immovablerod.metaDungeon.util.Random.*;
 public class Game {
     // stores access to core plugin data
     private final MetaDungeon plugin = MetaDungeon.getInstance();
+    // TODO: move to GConfig
     private final WeightedSelection itemRarityCategorySelector = new WeightedSelection(
-            plugin.gameplay.at("/items/rarityDistribution"),
-            plugin.gameplay.at("/items/categoryDistribution")
+            plugin.jsonLoader.gameplay.at("/items/rarityDistribution"),
+            plugin.jsonLoader.gameplay.at("/items/categoryDistribution")
     );
 
     private final WeightedSelection eventRarityCategory = new WeightedSelection(
-            plugin.gameplay.at("/events/rarityDistribution"),
-            plugin.gameplay.at("/events/categoryDistribution")
+            plugin.jsonLoader.gameplay.at("/events/rarityDistribution"),
+            plugin.jsonLoader.gameplay.at("/events/categoryDistribution")
     );
 
     private final WeightedSelection monsterRarityCategorySelector = new WeightedSelection(
-            plugin.gameplay.at("/monsters/rarityDistribution")
+            plugin.jsonLoader.gameplay.at("/monsters/rarityDistribution")
     );
 
     // *** run time settings ***
-    private int currentRound;
+    public int currentRound;
 
-    public void startGame(String name) {
+    public void startGame(String mapName) {
         GConfig.init();
+        GConfig.mapManager.setCurrentMap(mapName);
 
-        Location spawnLocation = new Location(plugin.world,
-                Double.parseDouble(plugin.mapsDB.get(name).get("spawnx")),
-                Double.parseDouble(plugin.mapsDB.get(name).get("spawny")),
-                Double.parseDouble(plugin.mapsDB.get(name).get("spawnz")));
-        for (UUID key : plugin.players.keySet()) {
-            // reload player stats to base state
-            plugin.players.put(key, new MetaDungeonPlayer(plugin.players.get(key).getPlayer()));
-            System.out.println(plugin.players);
-            try {
-                plugin.players.get(key).getPlayer().teleport(spawnLocation);
-            } catch ( IllegalArgumentException x) {
+        if (GConfig.mapManager.isInitialized()) {
+            GConfig.playerManager.addPlayersFromWorld();
+            GConfig.playerManager.reload();
+
+            Location spawnLocation = GConfig.mapManager.getPlayerSpawnPoint();
+
+            for (MetaDungeonPlayer player : GConfig.playerManager.getAll()) {
+                // reload player stats to base state
+                player.getPlayer().teleport(spawnLocation);
+                player.getPlayer().getInventory().clear();
+                player.getPlayer().setGameMode(GameMode.ADVENTURE);
+                player.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, 99999, 0, true, false));
+                player.setInGame(true);
+                GConfig.messageManager.addPlayer(player.getPlayer());
 
             }
-            plugin.players.get(key).getPlayer().getInventory().clear();
-            plugin.players.get(key).getPlayer().setGameMode(GameMode.ADVENTURE);
-            plugin.players.get(key).getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, 99999, 0, true, false));
-            plugin.players.get(key).setInGame(true);
-
             plugin.world.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, false);
             plugin.world.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false);
             plugin.world.setGameRule(GameRule.DO_ENTITY_DROPS, false);
@@ -77,17 +77,19 @@ public class Game {
             plugin.world.setGameRule(GameRule.MOB_GRIEFING, false);
             plugin.world.setGameRule(GameRule.DO_FIRE_TICK, false);
 
-            GConfig.messageManager.addPlayer(plugin.players.get(key).getPlayer());
-
+            GConfig.messageManager.titleAll("Game Starting!", "", Colors.GREEN, Colors.GREEN);
+            GConfig.messageManager.messageAllRepeat("Wave Starting in @time Seconds!", Colors.GREEN,  10);
+            plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, this::startRound, 20L * 10L));
+            plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, this::genChests, 20L * 3));
+            plugin.tasks.add(Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+                for(MetaDungeonPlayer p : GConfig.playerManager.getAll()) {
+                    p.update();
+                }
+            }, 2L, 2L));
+            plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, this::genWorldEvent, 20L * (getRandInt(GConfig.worldEventSpawnTimeMin, GConfig.worldEventSpawnTimeMax))));
+        } else {
+            plugin.getLogger().severe("Could not start game (reason: map not initialized)");
         }
-        GConfig.messageManager.titleAll("Game Starting!", "", Colors.GREEN, Colors.GREEN);
-        GConfig.messageManager.messageAllRepeat("Wave Starting in @time Seconds!", Colors.GREEN,  10);
-        plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, this::startRound, 20L * 10L));
-        plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, this::genChests, 20L * 3));
-        plugin.tasks.add(Bukkit.getScheduler().runTaskTimer(plugin, () -> {for(MetaDungeonPlayer p : plugin.players.values()){p.update();}}, 2L, 2L));
-
-        plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, this::genWorldEvent, 20L * (getRandInt(GConfig.worldEventSpawnTimeMin, GConfig.worldEventSpawnTimeMax))));
-
     }
 
     public void startRound() {
@@ -98,9 +100,7 @@ public class Game {
         // sub waves
         long subWaveInterval = floorDiv(GConfig.roundDuration, GConfig.roundWaves - 1);
         for (int i=0;i < GConfig.roundWaves - 1;i++) {
-            plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                genEntities((float) GConfig.roundInterWaveScale);
-                }, 20L * subWaveInterval * (i+1)));
+            plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, () -> genEntities((float) GConfig.roundInterWaveScale), 20L * subWaveInterval * (i+1)));
         }
         plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, this::endRound, 20L * GConfig.roundDuration));
     }
@@ -112,22 +112,20 @@ public class Game {
     }
 
     public void genEntities(float countModifier) {
-        for (MetaDungeonPlayer player : plugin.players.values()) {
-            player.getPlayer().sendMessage("Monsters approach!");
-        }
+        messageManager.messageAll("Monsters approach!", Colors.AQUA);
 
         // number of entities being spawn on a current wave
-        int entityCount = Math.toIntExact(round(((float) plugin.map.getEntityLocations().size() / GConfig.monsterDensity) * countModifier *
-                (1.0 + GConfig.multiplayerScalingMonsterCount * (float) (plugin.players.size() - 1.0))));
+        int entityCount = Math.toIntExact(round(((float) plugin.map.getEntityLocations().size() * ((float) GConfig.monsterDensity / 10000)) * countModifier *
+                (1.0 + GConfig.multiplayerScalingMonsterCount * (float) (GConfig.playerManager.getAll().size() - 1.0))));
+
         plugin.getLogger().info("spawning '" + entityCount + "' monsters");
 
         for (int i = 0; i < entityCount; i++) {
-            Location location = plugin.map.getEntityLocations().get(getRandInt(0, plugin.map.getEntityLocations().size() - 1));
+            Location location = GConfig.mapManager.getEntityLocation();
 
 
             String selection = GConfig.monsterSelection.fetch(monsterRarityCategorySelector.resolveRoll());
-            while (plugin.entityTemplates.path(selection).path("minLevel").asInt(1) > currentRound) {
-                System.out.println(selection);
+            while (plugin.jsonLoader.entityTemplates.path(selection).path("minLevel").asInt(1) > currentRound) {
                 selection = GConfig.monsterSelection.fetch(monsterRarityCategorySelector.resolveRoll());
             }
 
@@ -137,9 +135,11 @@ public class Game {
     }
 
     public void genChests() {
-        System.out.println(plugin.players.size());
-        int chestCount = Math.toIntExact(round(((float) plugin.map.getChestLocations().size() / GConfig.chestDensity) *
-                (1.0 + GConfig.multiplayerScalingChestCount * ((float) plugin.players.size() - 1.0))));
+        // chest density is calculated as <valid locations> * (density/10000) * mods
+
+        int chestCount = Math.toIntExact(
+                round(((float) plugin.map.getChestLocations().size() * ((float) GConfig.chestDensity / 10000)) *
+                (1.0 + GConfig.multiplayerScalingChestCount * ((float) GConfig.playerManager.getAll().size() - 1.0))));
 
         plugin.getLogger().info("placing " + chestCount + " chests");
 
@@ -148,7 +148,7 @@ public class Game {
         RandomCollection<String> tierWeights = generateLootTier(currentRound);
 
         for (int i = 0;i < chestCount;i++) {
-            Location location = plugin.map.getChestLocations().get(getRandInt(0, plugin.map.getChestLocations().size() - 1));
+            Location location = GConfig.mapManager.getChestLocation();
             locations.add(location);
 
             Block block = location.getBlock();
@@ -164,7 +164,7 @@ public class Game {
                 try {
                     List<String> itemParams = itemRarityCategorySelector.resolveRoll();
                     itemParams.add(0, tierWeights.next());
-                    MetaDungeonItem item = ItemUtil.createItem(GConfig.itemsSelection.fetch(itemParams));
+                    MetaDungeonItem item = GConfig.itemManager.add(GConfig.itemsSelection.fetch(itemParams));
 
                     if (item == null) continue;
 
@@ -179,23 +179,19 @@ public class Game {
                 }
             }
         }
-        plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, () -> {Tasks.removeChests(locations);}, 20L * GConfig.chestLifespan));
+        plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, () -> Tasks.removeChests(locations), 20L * GConfig.chestLifespan));
         plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, this::genChests, 20L * (getRandInt(GConfig.chestSpawnTimeMin, GConfig.chestSpawnTimeMax)))
         );
     }
 
     public void genWorldEvent() {
-
         String event = GConfig.eventSelection.fetch(eventRarityCategory.resolveRoll());
-        System.out.println(event);
         eventManager.add(event, currentRound);
         plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, this::genWorldEvent, 20L * (getRandInt(GConfig.worldEventSpawnTimeMin, GConfig.worldEventSpawnTimeMax))));
     }
     public void onPlayerDeath() {
         List<Boolean> dead = new ArrayList<>();
-        this.plugin.players.values().forEach(player -> {
-            dead.add(player.isDead());
-        });
+        GConfig.playerManager.getAll().forEach(player -> dead.add(player.isDead()));
         System.out.println("PLAYER DIED");
         System.out.println(dead);
         if (!dead.contains(false)) {
@@ -205,7 +201,11 @@ public class Game {
     }
 
     public void stopGame() {
-        System.out.println("stopping game");
+        plugin.getLogger().info("stopping game");
+
+        plugin.world.setStorm(false);
+        plugin.world.setClearWeatherDuration(1000000);
+
         for (BukkitTask task : plugin.tasks) {
             task.cancel();
         }
@@ -223,14 +223,14 @@ public class Game {
         for (UUID entity : GConfig.entityManager.getAllIDs()) {
             GConfig.entityManager.getFromID(entity).getEntity().remove();
         }
-        for (MetaDungeonPlayer player : plugin.players.values()) {
+        for (MetaDungeonPlayer player : GConfig.playerManager.getAll()) {
             player.setInGame(false);
         }
+
         GConfig.entityManager.clear();
         GConfig.messageManager.clear();
         GConfig.eventManager.clear();
-        plugin.items.clear();
-        plugin.world.setStorm(false);
-        plugin.world.setClearWeatherDuration(1000000);
+        GConfig.itemManager.clear();
+
     }
 }

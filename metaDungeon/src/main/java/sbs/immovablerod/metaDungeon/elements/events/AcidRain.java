@@ -37,7 +37,7 @@ public class AcidRain extends EventInterface {
     }
 
     private void update() {
-        for (MetaDungeonPlayer player : plugin.players.values()) {
+        for (MetaDungeonPlayer player : GConfig.playerManager.getAll()) {
             boolean inTheRain = true;
             for (int i = 0;i < 50; i++) {
                 Location loc = player.getPlayer().getLocation().add(0, i, 0);

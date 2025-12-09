@@ -29,8 +29,9 @@ public class MonsterRush extends EventInterface {
         super.onInitiated();
         GConfig.messageManager.messageAll(this.root.getTemplate().at("/onInitiated/message").asText(), Colors.YELLOW);
         GConfig.entityManager.getAll().forEach(ele -> {
-            ele.addEffect(this.effect);
+            this.effect.addTarget(ele);
         });
+        this.effect.trigger();
     }
 
 }
