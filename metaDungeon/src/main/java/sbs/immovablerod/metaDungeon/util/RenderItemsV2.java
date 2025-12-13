@@ -4,18 +4,12 @@ package sbs.immovablerod.metaDungeon.util;
 import com.fasterxml.jackson.databind.JsonNode;
 import de.tr7zw.nbtapi.NBT;
 import de.tr7zw.nbtapi.iface.ReadWriteNBT;
-import de.tr7zw.nbtapi.iface.ReadWriteNBTCompoundList;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.json.JSONComponentSerializer;
-import org.apache.commons.text.WordUtils;
-import org.bukkit.inventory.ItemStack;
-import sbs.immovablerod.metaDungeon.enums.Colors;
 import sbs.immovablerod.metaDungeon.enums.Rarities;
-import sbs.immovablerod.metaDungeon.enums.Symbols;
 import sbs.immovablerod.metaDungeon.enums.Tiers;
 
 import java.util.*;
@@ -104,7 +98,7 @@ public class RenderItemsV2 {
            }
             // ** RARITY / CATEGORY **
             lore.add("{\"text\":\"\"}");
-            lore.add(renderLoreLine(Rarities.get(rarity).toString() + " " + WordUtils.capitalize(category),
+            lore.add(renderLoreLine(Rarities.get(rarity).toString() + " " + category,
                     Rarities.get(rarity).color()));
 
             ReadWriteNBT displayCompound = nbt.getOrCreateCompound("tooltip_display");

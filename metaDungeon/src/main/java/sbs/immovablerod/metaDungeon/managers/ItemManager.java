@@ -6,6 +6,7 @@ import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import sbs.immovablerod.metaDungeon.MetaDungeon;
 import sbs.immovablerod.metaDungeon.classes.MetaDungeonItem;
+import sbs.immovablerod.metaDungeon.classes.MetaDungeonPlayer;
 import sbs.immovablerod.metaDungeon.util.RenderItemsV2;
 
 
@@ -22,13 +23,14 @@ public class ItemManager {
         this.baseItemNBTs  = RenderItemsV2.renderBaseItemNbt(plugin.jsonLoader.itemsV2);
     }
 
-    public MetaDungeonItem add(String itemName) {
+    public MetaDungeonItem add(String itemName, MetaDungeonPlayer owner) {
         if (itemName == null) return null;
 
         UUID id = UUID.randomUUID();
         try {
             MetaDungeonItem item = new MetaDungeonItem(
                     itemName,
+                    owner,
                     id,
                     this.baseItemNBTs.get(itemName),
                     plugin.jsonLoader.itemsV2.path(itemName)

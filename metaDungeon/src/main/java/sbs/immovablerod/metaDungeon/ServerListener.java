@@ -1,6 +1,6 @@
 package sbs.immovablerod.metaDungeon;
 
-import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -8,27 +8,34 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.event.player.*;
+import org.bukkit.inventory.PlayerInventory;
 import sbs.immovablerod.metaDungeon.classes.*;
+import sbs.immovablerod.metaDungeon.enums.Signal;
 import sbs.immovablerod.metaDungeon.game.GConfig;
+import sbs.immovablerod.metaDungeon.signals.PlayerRightClickSignal;
+
+import static sbs.immovablerod.metaDungeon.game.GConfig.taskManager;
 
 public class ServerListener implements Listener {
     private final MetaDungeon plugin = MetaDungeon.getInstance();
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
-        Bukkit.broadcastMessage("Welcome to the server - niggers are halve price today so get them while they last!");
-
         GConfig.playerManager.add(event.getPlayer());
         GConfig.messageManager.addPlayer(event.getPlayer());
 
     }
 
+
+
     @EventHandler(priority=EventPriority.HIGH)
     public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
-        if (event.getEntity() instanceof Player) {
+        if (event.getEntity() instanceof Player && event.getDamager() instanceof Player) {
+            event.setCancelled(true);
+        } else if (event.getEntity() instanceof Player player) {
             // handles damage dealt to player
-            Player player = (Player) event.getEntity();
             MetaDungeonPlayer hitPlayer = GConfig.playerManager.getFromID(player.getUniqueId());
             if (hitPlayer.isInvincible()) event.setCancelled(true);
 
@@ -147,35 +154,38 @@ public class ServerListener implements Listener {
     }
 
     @EventHandler
+    public void onInventoryMoveItemEvent(InventoryMoveItemEvent event) {
+        if (event.getItem().getType() == Material.COMPASS) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
     public void onInventoryInteract(InventoryClickEvent event) {
-        plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            GConfig.playerManager.getFromID(event.getWhoClicked().getUniqueId()).updateInventory();
-            }, 5L));
+        if (GConfig.playerManager.getFromID(event.getWhoClicked().getUniqueId()).isInGame()) {
+            if (event.isLeftClick() && event.getSlot() == 8 && event.getClickedInventory() instanceof PlayerInventory) {
+                event.setCancelled(true);
+            }
+
+            taskManager.runTaskLater(
+                    () -> GConfig.playerManager.getFromID(event.getWhoClicked().getUniqueId()).updateInventory(), 5L);
+        }
     }
 
     @EventHandler
     public void onPlayerItemHeld(PlayerItemHeldEvent event) {
-        plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            GConfig.playerManager.getFromID(event.getPlayer().getUniqueId()).updateInventory();
-        }, 5L));
+        if (GConfig.playerManager.getFromID(event.getPlayer().getUniqueId()).isInGame()) {
+            taskManager.runTaskLater(
+                    () -> GConfig.playerManager.getFromID(event.getPlayer().getUniqueId()).updateInventory(), 5L);
+        }
+    }
+
+    @EventHandler
+    public void onPlayerInputEvent(PlayerInteractEvent event) {
+        if (event.getAction().isRightClick()) {
+            GConfig.signalListeners.get(Signal.PLAYER_RIGHT_CLICK).trigger(new PlayerRightClickSignal(event.getPlayer()));
+        }
     }
 
 
-
-
-//    @EventHandler
-//    public void onPlayerItemDamage(PlayerItemDamageEvent event) {
-//        AdvancedItem item = plugin.players.get(event.getPlayer().getUniqueId()).getGear().get("mainHand");
-//        System.out.println("check");
-//        System.out.println(item.getDurability());
-//
-//        if (item != null) {
-//            if (item.durability != null && item.durability != -1) {
-//                System.out.println(item.getDurability());
-//                item.currentDurability -= 1;
-//                //System.out.println(this.currentDurability);
-//                //System.out.println(round(this.maxInternalDurability - ((float) this.currentDurability / (float)  this.durability) * (float)  this.maxInternalDurability));
-//            }
-//        }
-//    }
 }

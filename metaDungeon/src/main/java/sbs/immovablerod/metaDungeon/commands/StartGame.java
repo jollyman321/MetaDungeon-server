@@ -5,8 +5,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import sbs.immovablerod.metaDungeon.MetaDungeon;
-import sbs.immovablerod.metaDungeon.game.Game;
-import sbs.immovablerod.metaDungeon.game.DungeonMap;
+import sbs.immovablerod.metaDungeon.game.Runtime;
 
 public class StartGame implements CommandExecutor {
     private final MetaDungeon plugin = MetaDungeon.getInstance();
@@ -19,7 +18,7 @@ public class StartGame implements CommandExecutor {
 
         this.plugin.world = Bukkit.getWorld("world");
 
-        plugin.game = new Game();
+        plugin.game = new Runtime();
         plugin.game.startGame(args[0]);
         return true;
     }

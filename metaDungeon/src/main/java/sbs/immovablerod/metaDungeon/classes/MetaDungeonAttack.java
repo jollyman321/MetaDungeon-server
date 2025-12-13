@@ -1,11 +1,14 @@
 package sbs.immovablerod.metaDungeon.classes;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bukkit.entity.Player;
 import sbs.immovablerod.metaDungeon.MetaDungeon;
 import sbs.immovablerod.metaDungeon.game.GConfig;
 import sbs.immovablerod.metaDungeon.managers.PlayerManager;
 
 public class MetaDungeonAttack {
+    private static final Logger log = LogManager.getLogger(MetaDungeonAttack.class);
     private final MetaDungeon plugin = MetaDungeon.getInstance();
     public final MetaDungeonEntity attacker;
     public final MetaDungeonEntity victim;
@@ -39,9 +42,8 @@ public class MetaDungeonAttack {
     }
 
     public void resolve() {
+
         try {
-
-
             this.attacker.getEquipment().values().forEach(item -> {
                     item.getController().onCommitAttack(this.attacker, this.victim);
             });
@@ -66,8 +68,13 @@ public class MetaDungeonAttack {
             }
 
         } catch (NullPointerException e) {
-            plugin.getLogger().warning("failed to execute attack " + this.attacker.getName() + " -> " + this.victim.getName());
-            System.out.println(e);
+            if (this.attacker == null) {
+                plugin.getLogger().warning("failed to execute attack (attacker is null)");
+
+            } else {
+                plugin.getLogger().warning("failed to execute attack " + this.attacker.getName() + " -> " + this.victim.getName());
+                log.error("e: ", e);
+            }
         }
     }
 }

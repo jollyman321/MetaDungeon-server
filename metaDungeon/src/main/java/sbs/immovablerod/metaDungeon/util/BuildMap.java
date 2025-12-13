@@ -19,7 +19,7 @@ import static java.lang.Math.min;
 public class BuildMap {
     private final MetaDungeon plugin = MetaDungeon.getInstance();
     private final World world;
-    public BuildMap (World world, String name, Location pos1, Location pos2, Location playerSpawnPos) throws IOException {
+    public BuildMap (World world, String name, Location pos1, Location pos2) throws IOException {
         plugin.getLogger().info("Creating map...");
         this.world = world;
         // always start at the most negative pos
@@ -34,7 +34,6 @@ public class BuildMap {
         plugin.getLogger().info("pos " + xStart + " "+ yStart + " "+ zStart + " ");
         plugin.getLogger().info("delta " + xDelta + " "+ yDelta + " "+ zDelta + " ");
 
-        Integer[] playerSpawn = new Integer[]{playerSpawnPos.getBlockX(), playerSpawnPos.getBlockY(), playerSpawnPos.getBlockZ()};
 
         List<Integer[]> chestLocations = new ArrayList<>();
         List<Integer[]> entityLocations = new ArrayList<>();
@@ -66,7 +65,7 @@ public class BuildMap {
         plugin.getLogger().info("map saved to " + plugin.jsonLoader.mapDataPath + File.separator + name + ".json");
 
 
-        writer.writeValue(file, new SerializableMap(name, playerSpawn, chestLocations, entityLocations, oversizedEntityLocations));
+        writer.writeValue(file, new SerializableMap(name, chestLocations, entityLocations, oversizedEntityLocations));
 
     }
     private boolean isValidChestSpawn(int x, int y, int z) {

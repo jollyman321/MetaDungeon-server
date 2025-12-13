@@ -10,6 +10,8 @@ import sbs.immovablerod.metaDungeon.game.GConfig;
 
 import java.util.ArrayList;
 
+import static sbs.immovablerod.metaDungeon.game.GConfig.taskManager;
+
 public class MetaDungeonEffect {
     private final MetaDungeon plugin = MetaDungeon.getInstance();
 
@@ -38,7 +40,7 @@ public class MetaDungeonEffect {
             this.active = true;
             // Use -1 for permanent effects
             if (this.duration > 0) {
-                plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, this::deactivate, 20L * this.duration));
+                taskManager.runTaskLater(this::deactivate, 20L * this.duration);
             }
             this.affectedEntities.forEach(target -> {
                 this.controller.onInitiated(target);

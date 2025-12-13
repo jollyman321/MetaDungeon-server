@@ -24,7 +24,7 @@ public class Reload {
     private static final MetaDungeon plugin = MetaDungeon.getInstance();
 
     public static LiteralCommandNode<CommandSourceStack> createCommand(final String commandName) {
-        return Commands.literal(commandName).executes(_ -> {
+        return Commands.literal(commandName).executes(ignored -> {
             try {
                 plugin.jsonLoader.reload();
             } catch (IOException e) {

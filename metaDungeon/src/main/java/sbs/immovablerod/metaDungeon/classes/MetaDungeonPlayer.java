@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static java.lang.Math.round;
+import static sbs.immovablerod.metaDungeon.game.GConfig.taskManager;
 
 
 public class MetaDungeonPlayer extends MetaDungeonEntity {
@@ -107,9 +108,7 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
         if (this.gear.get("mainHand") != null && this.gear.get("mainHand").getAttackSpeed() >= 1) {
             this.attackCoolDown = ((float) 10 /((float) this.gear.get("mainHand").getAttackSpeed() /10));
             this.attackCoolDownPeak = this.attackCoolDown;
-            plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                this.player.addPotionEffect(new PotionEffect(PotionEffectType.HASTE, (2 * (int) this.attackCoolDown), 255));
-            }, 4L));
+            taskManager.runTaskLater(() -> this.player.addPotionEffect(new PotionEffect(PotionEffectType.HASTE, (2 * (int) this.attackCoolDown), 255)), 4L);
         }
     }
 
@@ -151,29 +150,31 @@ public class MetaDungeonPlayer extends MetaDungeonEntity {
     }
 
     public void displayActionBar() {
-        if (!this.dead) {
-            Component actionBar = Component
-                    .text(this.getHealth() + "/" + this.getMaxHealth() + Symbols.HEART, Symbols.HEART.color())
-                    .append(Component.text("  |  ", NamedTextColor.WHITE))
-                    .append(Component.text(this.getDamage() + "" + Symbols.DAMAGE, Symbols.DAMAGE.color()))
-                    .append(Component.text("  |  ", NamedTextColor.WHITE))
-                    .append(Component.text(this.getDefence() + "" + Symbols.DEFENCE, Symbols.DEFENCE.color()))
-                    .append(Component.text("  |  ", NamedTextColor.WHITE))
-                    .append(Component.text(round(this.getStamina()) + "/" + round(this.getMaxStamina()) + Symbols.STAMINA, Symbols.STAMINA.color()));
-            this.player.sendActionBar(actionBar);
-        } else {
-            this.player.sendActionBar(
-                    GConfig.messageManager.getMM().deserialize(plugin.jsonLoader.messages.at("/player/deadActionBar").asText(),
-                            Placeholder.component("lives", Component.text(String.valueOf(this.getLives() - 1), Symbols.LIFE.color())))
-            );
-        }
+        if (this.isInGame()) {
+            if (!this.dead) {
+                Component actionBar = Component
+                        .text(this.getHealth() + "/" + this.getMaxHealth() + Symbols.HEART, Symbols.HEART.color())
+                        .append(Component.text("  |  ", NamedTextColor.WHITE))
+                        .append(Component.text(this.getDamage() + "" + Symbols.DAMAGE, Symbols.DAMAGE.color()))
+                        .append(Component.text("  |  ", NamedTextColor.WHITE))
+                        .append(Component.text(this.getDefence() + "" + Symbols.DEFENCE, Symbols.DEFENCE.color()))
+                        .append(Component.text("  |  ", NamedTextColor.WHITE))
+                        .append(Component.text(round(this.getStamina()) + "/" + round(this.getMaxStamina()) + Symbols.STAMINA, Symbols.STAMINA.color()));
+                this.player.sendActionBar(actionBar);
+            } else {
+                this.player.sendActionBar(
+                        GConfig.messageManager.getMM().deserialize(plugin.jsonLoader.messages.at("/player/deadActionBar").asText(),
+                                Placeholder.component("lives", Component.text(String.valueOf(this.getLives() - 1), Symbols.LIFE.color())))
+                );
+            }
 
-        final Component header = Component.text("Meta Dungeon v1.1", NamedTextColor.BLUE);
-        final Component footer = Component.text("Lives Remaining: ", NamedTextColor.WHITE)
-                .append(Component.text(String.valueOf(this.getLives() - 1), NamedTextColor.DARK_AQUA))
-                .append(Component.text("  |  Round: ", NamedTextColor.WHITE))
-                .append(Component.text(plugin.game.currentRound, NamedTextColor.YELLOW));
-        this.player.sendPlayerListHeaderAndFooter(header, footer);
+            final Component header = Component.text("Meta Dungeon v1.1", NamedTextColor.BLUE);
+            final Component footer = Component.text("Lives Remaining: ", NamedTextColor.WHITE)
+                    .append(Component.text(String.valueOf(this.getLives() - 1), NamedTextColor.DARK_AQUA))
+                    .append(Component.text("  |  Round: ", NamedTextColor.WHITE))
+                    .append(Component.text(plugin.game.getCurrentRound(), NamedTextColor.YELLOW));
+            this.player.sendPlayerListHeaderAndFooter(header, footer);
+        }
 
     }
     public void update() {

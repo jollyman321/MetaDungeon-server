@@ -2,10 +2,7 @@ package sbs.immovablerod.metaDungeon.enums;
 
 import sbs.immovablerod.metaDungeon.classes.MetaDungeonItem;
 import sbs.immovablerod.metaDungeon.elements.ItemInterface;
-import sbs.immovablerod.metaDungeon.elements.items.Dummy;
-import sbs.immovablerod.metaDungeon.elements.items.EffectWeapon;
-import sbs.immovablerod.metaDungeon.elements.items.PaladinsShield;
-import sbs.immovablerod.metaDungeon.elements.items.SoulEater;
+import sbs.immovablerod.metaDungeon.elements.items.*;
 
 import java.util.Objects;
 
@@ -29,6 +26,13 @@ public enum Items
             return new PaladinsShield(root);
         }
     },
+    EVENT_COMPASS("eventCompass") {
+        @Override
+        public ItemInterface itemInterface(MetaDungeonItem root) {
+            return new EventCompass(root);
+        }
+    },
+
     SOUL_EATER("soulEater") {
         @Override
         public ItemInterface itemInterface(MetaDungeonItem root) {

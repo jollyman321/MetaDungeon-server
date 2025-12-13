@@ -4,9 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import de.tr7zw.nbtapi.NBT;
 import de.tr7zw.nbtapi.iface.ReadWriteNBT;
 import de.tr7zw.nbtapi.iface.ReadWriteNBTCompoundList;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextComponent;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Effect;
 import org.bukkit.Location;
 import org.bukkit.attribute.Attribute;
@@ -25,6 +22,7 @@ import sbs.immovablerod.metaDungeon.game.GConfig;
 import java.util.ArrayList;
 import java.util.UUID;
 
+import static java.lang.Math.round;
 import static sbs.immovablerod.metaDungeon.util.EntityUtil.getScaledInt;
 
 public class MetaDungeonMonster extends MetaDungeonEntity {
@@ -58,7 +56,9 @@ public class MetaDungeonMonster extends MetaDungeonEntity {
             ReadWriteNBTCompoundList modifierCompound = nbt.getCompoundList("attributes");
             ReadWriteNBT movementCompound = modifierCompound.addCompound();
             movementCompound.setString("id", "minecraft:follow_range");
-            movementCompound.setInteger("base", 20);
+            movementCompound.setInteger("base", Math.toIntExact(round(
+                    (double) GConfig.monsterBaseFollowRange * GConfig.mapManager.getBaseFollowRangeModifier()))
+            );
 
             // this doesn't work for some reason?
 
@@ -82,6 +82,10 @@ public class MetaDungeonMonster extends MetaDungeonEntity {
 
         this.livingEntity.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 99999, 5, true, false));
 
+        if (template.path("glows").asBoolean()) {
+            this.livingEntity.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 99999, 5, true, false));
+
+        }
 
         this.updateDisplay();
     }
@@ -128,8 +132,6 @@ public class MetaDungeonMonster extends MetaDungeonEntity {
                 movementCompound.setDouble("base",  trueSpeed);
             });
         }
-
-        System.out.println(this.livingEntity);
     }
 
     public Entity getEntity() {

@@ -20,7 +20,7 @@ public class GiveItem implements CommandExecutor {
         }
         Player target = (Player) sender;
 
-        target.getInventory().addItem(GConfig.itemManager.add(args[0]));
+        target.getInventory().addItem(GConfig.itemManager.add(args[0], null));
 
         return true;
     }

@@ -1,16 +1,11 @@
 name: MetaDungeon
-version: '1.1'
+version: '1.2'
 main: sbs.immovablerod.metaDungeon.MetaDungeon
 author: SkillfulHacks
 api-version: '1.21.10'
 depend: [NBTAPI]
 load: STARTUP
 commands:
-  init_map:
-    description: testing
-    usage: /init_map <name> <x> <y> <z> <xdelta> <ydelta> <zdelta>
-    permission: metaDungeon.init_map
-    permission-message: You don't have <permission>
   start_game:
     description: testing
     usage: /start_game <name>

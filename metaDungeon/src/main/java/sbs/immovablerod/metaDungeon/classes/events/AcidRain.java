@@ -1,39 +1,33 @@
-package sbs.immovablerod.metaDungeon.elements.events;
+package sbs.immovablerod.metaDungeon.classes.events;
 
-import org.bukkit.Bukkit;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.bukkit.Location;
 import sbs.immovablerod.metaDungeon.MetaDungeon;
 import sbs.immovablerod.metaDungeon.classes.MetaDungeonEffect;
-import sbs.immovablerod.metaDungeon.classes.MetaDungeonEvent;
 import sbs.immovablerod.metaDungeon.classes.MetaDungeonMonster;
 import sbs.immovablerod.metaDungeon.classes.MetaDungeonPlayer;
-import sbs.immovablerod.metaDungeon.elements.EventInterface;
 import sbs.immovablerod.metaDungeon.enums.Colors;
-import sbs.immovablerod.metaDungeon.enums.Effects;
 import sbs.immovablerod.metaDungeon.game.GConfig;
 import sbs.immovablerod.metaDungeon.util.Random;
 
-public class AcidRain extends EventInterface {
+import static sbs.immovablerod.metaDungeon.game.GConfig.taskManager;
+
+public class AcidRain extends MetaDungeonEvent {
     private final MetaDungeon plugin = MetaDungeon.getInstance();
-    private final MetaDungeonEvent root;
-    private final int duration;
-    private MetaDungeonEffect effect ;
+    private MetaDungeonEffect effect;
     private MetaDungeonMonster entity;
     private final Integer eventStrength;
-    public AcidRain(MetaDungeonEvent root) {
-        this.root = root;
-        this.eventStrength = root.getLevel();
-        this.duration = Random.getRandInt(60, 180);
+    public AcidRain(String name, JsonNode template, int level) {
+        super(name, template, level);
+        this.eventStrength = this.getLevel();
     }
 
     @Override
     public void onInitiated() {
         super.onInitiated();
-        GConfig.messageManager.messageAll(this.root.getTemplate().at("/onInitiated/message").asText(), Colors.RED);
         plugin.world.setStorm(true);
-        plugin.world.setWeatherDuration(this.duration * 20);
-        Bukkit.getScheduler().runTaskLater(plugin, this.root::end, 20L * (this.duration - 2));
-        this.update();
+        plugin.world.setWeatherDuration((this.getDuration() - 3) * 20);
+        this.startUpdateLoop(20L);
     }
 
     private void update() {
@@ -50,9 +44,6 @@ public class AcidRain extends EventInterface {
                 player.changeHealth(-this.eventStrength);
             }
         }
-        if (!this.root.isCompleted()) {
-            plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin, this::update, 20L));
-        }
     }
 
     @Override
@@ -60,6 +51,5 @@ public class AcidRain extends EventInterface {
         super.onCompleted();
         plugin.world.setStorm(false);
         plugin.world.setClearWeatherDuration(100000);
-        GConfig.messageManager.messageAll(this.root.getTemplate().at("/onCompleted/message").asText(), Colors.GREEN);
     }
 }

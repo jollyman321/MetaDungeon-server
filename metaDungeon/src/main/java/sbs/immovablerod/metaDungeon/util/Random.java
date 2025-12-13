@@ -1,11 +1,4 @@
 package sbs.immovablerod.metaDungeon.util;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import sbs.immovablerod.metaDungeon.game.Debug;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -34,9 +27,11 @@ public class Random {
         if (currentRound<= 10) {
             choices.add(Math.sin(((double) (currentRound) / 12)) , "2");
         }
-        if (5 <= currentRound && currentRound <= 10) {
-            choices.add(Math.sin(((double) (currentRound) / 12.0) - Math.PI / 2.0) + 1, "3");
-        }
+        if (5 <= currentRound && currentRound <= 15) {
+            choices.add(Math.sin(((double) (currentRound) / 13.0) - 6 / Math.PI) + 1, "3");
+        } //if (12 <= currentRound && currentRound <= 22) {
+        //    choices.add(Math.sin(((double) (currentRound) / 8.0) - 9 / Math.PI) + 1, "4");
+        //}
 
         System.out.println("loot weights for " + currentRound);
         System.out.println(Math.cos(((double) (currentRound) / 4.0)));

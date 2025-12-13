@@ -29,7 +29,7 @@ public class EffectWeapon extends ItemInterface {
     @Override
     public void onCommitAttack(MetaDungeonEntity attacker, MetaDungeonEntity victim) {
         super.onCommitAttack(attacker, victim);
-        final JsonNode arrNode = this.root.getTemplate().get("onCommitAttack").get("applyEffects");
+        final JsonNode arrNode = this.root.getTemplate().path("onCommitAttack").path("applyEffects");
         if (arrNode.isArray()) {
             arrNode.forEach(node -> {
                 MetaDungeonEffect effect = new MetaDungeonEffect(
@@ -55,7 +55,7 @@ public class EffectWeapon extends ItemInterface {
     @Override
     public void onReceiveAttack(MetaDungeonEntity attacker, MetaDungeonEntity receiver) {
         super.onReceiveAttack(attacker, receiver);
-        final JsonNode arrNode = this.root.getTemplate().get("onReceiveAttack").get("applyEffects");
+        final JsonNode arrNode = this.root.getTemplate().path("onReceiveAttack").path("applyEffects");
         if (arrNode.isArray()) {
             arrNode.forEach(node -> {
                 MetaDungeonEffect effect = new MetaDungeonEffect(

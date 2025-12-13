@@ -37,11 +37,13 @@ public class MetaDungeonItem extends ItemStack {
     private final Integer armorPierce;
     private final Double range;
     private final ItemInterface controller;
+    private final MetaDungeonPlayer owner;
     public Integer durability;
     public Integer currentDurability;
 
     public MetaDungeonItem(
                          String name,
+                         MetaDungeonPlayer owner,
                          UUID id,
                          ReadWriteNBT baseNbt,
                          JsonNode template
@@ -52,6 +54,7 @@ public class MetaDungeonItem extends ItemStack {
         ));
 
         //this.item = item;
+        this.owner = owner;
         this.name = name;
         this.id = id;
         this.template = template;
@@ -182,4 +185,8 @@ public class MetaDungeonItem extends ItemStack {
 
     }
     public ItemInterface getController() {return this.controller;}
+
+    public MetaDungeonPlayer getOwner() {
+        return owner;
+    }
 }

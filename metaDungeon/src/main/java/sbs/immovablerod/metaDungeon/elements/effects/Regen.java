@@ -6,6 +6,8 @@ import sbs.immovablerod.metaDungeon.classes.MetaDungeonEffect;
 import sbs.immovablerod.metaDungeon.classes.MetaDungeonEntity;
 import sbs.immovablerod.metaDungeon.elements.EffectInterface;
 
+import static sbs.immovablerod.metaDungeon.game.GConfig.taskManager;
+
 public class Regen extends EffectInterface {
     private final MetaDungeonEffect root;
     private final MetaDungeon plugin = MetaDungeon.getInstance();
@@ -22,10 +24,10 @@ public class Regen extends EffectInterface {
 
     public void update(MetaDungeonEntity entity) {
         if (this.root.isActive()) {
-            plugin.tasks.add(Bukkit.getScheduler().runTaskLater(plugin,() -> {
+            taskManager.runTaskLater(() -> {
                 entity.changeHealth(this.root.getLevel());
                 this.update(entity);
-            }, 20L));
+            }, 20L);
         }
     }
 }
